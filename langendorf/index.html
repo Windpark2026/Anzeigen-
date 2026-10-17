@@ -558,8 +558,8 @@ let currentAngle = START_ANGLE;
 let totalYieldMwh = 128456.734;
 let lastTickMs = Date.now();
 
-// Trend: aktuelle Leistung gegen den Wert von vor ca. 5 Minuten (solange die App offen ist)
-const TREND_MS = 5 * 60 * 1000;
+// Trend: aktuelle Leistung gegen den Wert von vor ca. 1 Minute (solange die App offen ist)
+const TREND_MS = 60 * 1000;
 const trendHist = [];
 function setTrend(el, txt, color, unit) {
 el.setAttribute('fill', color);
@@ -577,9 +577,9 @@ const now = Date.now();
 trendHist.push({ t: now, kw: kw });
 while (trendHist.length > 1 && now - trendHist[1].t >= TREND_MS) trendHist.shift();
 const ref = trendHist[0];
-if (now - ref.t < 60000) { el.textContent = ''; return; }
+if (now - ref.t < TREND_MS - 4000) { el.textContent = ''; return; }
 const diff = Math.round(kw - ref.kw);
-if (Math.abs(diff) < 20) { setTrend(el, '\u25B6 \u00B10', '#9aa'); return; }
+if (Math.abs(diff) < 10) { setTrend(el, '\u25B6 \u00B10', '#9aa'); return; }
 const ad = Math.abs(diff);
 const big = ad >= 1000;
 const num = big ? (ad / 1000).toFixed(1).replace('.', ',') : String(ad);
