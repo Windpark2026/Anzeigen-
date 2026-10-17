@@ -549,9 +549,10 @@ let currentAngle = START_ANGLE;
 let totalYieldMwh = 128456.734;
 let lastTickMs = Date.now();
 
-// Trend: aktuelle Leistung gegen den Wert von vor ca. 1 Minute (solange die App offen ist)
-const TREND_MS = 60 * 1000;
-const trendHist = [];
+// Trend: zeigt die Richtung der letzten Aenderung des Live-Werts (Vergleich mit dem Wert davor).
+// Der Pfeil bleibt stehen, bis sich der Wert wieder aendert; nach 2 Minuten ohne Aenderung wird er grau.
+const TREND_IDLE_MS = 2 * 60 * 1000;
+let trendPrevKw = null, trendLastChange = 0, trendShown = null;
 function setTrend(el, txt, color, unit) {
 el.setAttribute('fill', color);
 el.textContent = '';
@@ -565,17 +566,21 @@ function updateTrend(kw) {
 const el = document.getElementById('trendText');
 if (!el) return;
 const now = Date.now();
-trendHist.push({ t: now, kw: kw });
-while (trendHist.length > 1 && now - trendHist[1].t >= TREND_MS) trendHist.shift();
-const ref = trendHist[0];
-if (now - ref.t < TREND_MS - 4000) { el.textContent = ''; return; }
-const diff = Math.round(kw - ref.kw);
-if (Math.abs(diff) < 10) { setTrend(el, '\u25B6 \u00B10', '#9aa'); return; }
+if (trendPrevKw === null) { trendPrevKw = kw; return; }
+const diff = Math.round(kw - trendPrevKw);
+if (diff !== 0) {
+trendPrevKw = kw;
+trendLastChange = now;
 const ad = Math.abs(diff);
 const big = ad >= 1000;
 const num = big ? (ad / 1000).toFixed(1).replace('.', ',') : String(ad);
 const arrow = diff > 0 ? '\u25B2 ' : '\u25BC ';
-setTrend(el, arrow + num, diff > 0 ? '#7be3a0' : '#ff8a70', big ? 'MW' : 'kW');
+trendShown = { txt: arrow + num, color: diff > 0 ? '#7be3a0' : '#ff8a70', unit: big ? 'MW' : 'kW' };
+setTrend(el, trendShown.txt, trendShown.color, trendShown.unit);
+} else if (trendShown && now - trendLastChange > TREND_IDLE_MS && trendShown.txt !== '\u25B6 \u00B10') {
+trendShown = { txt: '\u25B6 \u00B10', color: '#9aa', unit: 'kW' };
+setTrend(el, trendShown.txt, trendShown.color, trendShown.unit);
+}
 }
 
 async function tick() {
