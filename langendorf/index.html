@@ -28,13 +28,14 @@
     --font-display: 'Oswald', 'Arial Narrow', sans-serif;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background:#05090f; }
   html, body { margin:0; padding:0; height:100%; overflow:hidden; }
   body {
     background: radial-gradient(ellipse at center, #0a1420 0%, #05090f 70%, #030608 100%);
     display:flex; align-items:center; justify-content:center;
     padding-top: env(safe-area-inset-top,0px);
     padding-bottom: env(safe-area-inset-bottom,0px);
-    height:100%;
+    position:fixed; inset:0; height:auto;
   }
   .instrument-wrap {
     position: relative;
