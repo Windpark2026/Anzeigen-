@@ -164,6 +164,11 @@ font-family: var(--font-display); font-size:13px; letter-spacing:0.05em; font-we
 <feGaussianBlur stdDeviation="0.5" result="blur2"/>
 <feMerge><feMergeNode in="blur1"/><feMergeNode in="blur2"/><feMergeNode in="SourceGraphic"/></feMerge>
 </filter>
+<linearGradient id="maxNeedleGrad" gradientUnits="userSpaceOnUse" x1="200" y1="173" x2="200" y2="90">
+<stop offset="0" stop-color="#6aa7ee" stop-opacity="1"/>
+<stop offset="0.6" stop-color="#6aa7ee" stop-opacity="0.6"/>
+<stop offset="1" stop-color="#6aa7ee" stop-opacity="0"/>
+</linearGradient>
 </defs>
 <g id="windDots" filter="url(#windDotGlow)"></g>
 </svg>
@@ -235,6 +240,9 @@ font-family: var(--font-display); font-size:13px; letter-spacing:0.05em; font-we
 <text id="yieldUnit" font-family="Oswald" font-size="9.9" letter-spacing="1" fill="#e8ddc8"></text>
 
 <!-- needle -->
+<!-- Tagesspitze: Schleppnadel -->
+<g id="maxNeedleG" opacity="0"><line x1="200" y1="173" x2="200" y2="90" stroke="url(#maxNeedleGrad)" stroke-width="2.2" stroke-linecap="round"/></g>
+
 <g id="needleGroup">
 <polygon id="needle" points="0,-150 5,10 0,22 -5,10" fill="#8a2418"/>
 <polygon points="0,10 8,26 0,40 -8,26" fill="#3a120c"/>
@@ -248,6 +256,9 @@ font-family: var(--font-display); font-size:13px; letter-spacing:0.05em; font-we
 <circle cx="200" cy="200" r="24" fill="url(#hubGrad)" stroke="#100f0c" stroke-width="1.5"/>
 <circle cx="200" cy="200" r="6" fill="#0c0b08"/>
 <text id="trendText" x="200" y="237" text-anchor="middle" font-family="Oswald" font-size="10" letter-spacing="0.3" fill="#9aa" stroke="rgba(0,0,0,0.6)" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill"></text>
+
+<!-- Tagesspitze: Dreieck am Rand -->
+<g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -549,6 +560,30 @@ let currentAngle = START_ANGLE;
 let totalYieldMwh = 128456.734;
 let lastTickMs = Date.now();
 
+// Tagesspitze: hoechster Wert des Tages als Schleppnadel und Dreieck am Rand
+const maxNeedleG = document.getElementById('maxNeedleG');
+const maxTriG = document.getElementById('maxTriG');
+let dayMaxKw = 0;
+const todayKey = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+try {
+const sv = JSON.parse(localStorage.getItem('dayMaxKw') || 'null');
+if (sv && sv.d === todayKey() && sv.kw > 0) dayMaxKw = sv.kw;
+} catch (e) {}
+let dayMaxDate = todayKey();
+function updateDayMax(kw) {
+const t = todayKey();
+if (t !== dayMaxDate) { dayMaxDate = t; dayMaxKw = 0; }
+if (kw > dayMaxKw) {
+dayMaxKw = kw;
+try { localStorage.setItem('dayMaxKw', JSON.stringify({ d: t, kw: kw })); } catch (e) {}
+}
+if (dayMaxKw <= 0) return;
+const rot = 'rotate(' + valueToAngle(dayMaxKw / 1000).toFixed(2) + ' 200 200)';
+maxNeedleG.setAttribute('transform', rot); maxNeedleG.setAttribute('opacity', '1');
+maxTriG.setAttribute('transform', rot); maxTriG.setAttribute('opacity', '1');
+}
+updateDayMax(0);
+
 // Trend: zeigt die Richtung der letzten Aenderung des Live-Werts (Vergleich mit dem Wert davor).
 // Der Pfeil bleibt stehen, bis sich der Wert wieder aendert; nach 2 Minuten ohne Aenderung wird er grau.
 const TREND_IDLE_MS = 2 * 60 * 1000;
@@ -628,6 +663,7 @@ kw = demoKw;
 
 const { kwStr, mwStr } = formatPair(kw);
 if (isLiveValue) updateTrend(kw);
+if (isLiveValue) updateDayMax(kw);
 renderKwDigits(kwStr);
 mwText.textContent = mwStr;
 
