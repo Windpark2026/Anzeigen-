@@ -566,10 +566,12 @@ function updateTrend(kw) {
 const el = document.getElementById('trendText');
 if (!el) return;
 const now = Date.now();
-if (trendPrevKw === null) { trendPrevKw = kw; return; }
-const diff = Math.round(kw - trendPrevKw);
+// Verglichen wird mit dem angezeigten (gerundeten) kW-Wert, damit Pfeil und Anzeige immer zusammenpassen
+const kwShown = Math.round(kw);
+if (trendPrevKw === null) { trendPrevKw = kwShown; return; }
+const diff = kwShown - trendPrevKw;
 if (diff !== 0) {
-trendPrevKw = kw;
+trendPrevKw = kwShown;
 trendLastChange = now;
 const ad = Math.abs(diff);
 const big = ad >= 1000;
@@ -617,6 +619,7 @@ if (liveWindMs !== null && typeof window.setWindText === 'function') {
 window.setWindText(liveWindMs.toFixed(1).replace('.', ',') + ' m/s');
 }
 
+const isLiveValue = kw !== null;
 if (kw === null) {
 demoKw += demoDirection * (Math.random() * 70);
 if (demoKw > 14700 || demoKw < -300) demoDirection *= -1;
@@ -624,7 +627,7 @@ kw = demoKw;
 }
 
 const { kwStr, mwStr } = formatPair(kw);
-updateTrend(kw);
+if (isLiveValue) updateTrend(kw);
 renderKwDigits(kwStr);
 mwText.textContent = mwStr;
 
