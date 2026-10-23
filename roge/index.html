@@ -1,3 +1,7 @@
+<!-- ================================================================== -->
+<!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
+<!-- Version v12 (steht auch unten in der Anzeige) -->
+<!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -69,12 +73,12 @@ position: fixed; display: flex; flex-direction: column; justify-content: space-b
 align-items: center; box-sizing: border-box; pointer-events: none;
 font-family: var(--font-mono);
 }
-.hdrcol .r1 { height: 9px; }
+.hdrcol .r1 { height: 11px; }
 .hdrcol .r2 { height: 11px; }
-.hdrcol .r3 { height: 16px; }
+.hdrcol .r3 { height: 15px; }
 .hdrcol .r1, .hdrcol .r2, .hdrcol .r3 { display: flex; align-items: center; justify-content: center; white-space: nowrap; line-height: 1; }
 #hdrRight {
-top: calc(6px + env(safe-area-inset-top, 0px)); right: 10px; height: 41px; align-items: flex-end; color: #f0e6d2;
+top: calc(28px + env(safe-area-inset-top, 0px)); right: 10px; height: 41px; align-items: flex-end; color: #f0e6d2;
 }
 #hdrRight .r1, #hdrRight .r2, #hdrRight .r3 { justify-content: flex-end; }
 #hdrRight .r1 { gap: 6px; font-family: var(--font-display); font-size: 11px; letter-spacing: 0.08em; opacity: 0.95; }
@@ -86,7 +90,7 @@ top: calc(6px + env(safe-area-inset-top, 0px)); right: 10px; height: 41px; align
 @keyframes blink { 50% { opacity: 0.25; } }
 
 #maxBox { opacity: 0; display: flex; }
-#maxBox .mlabel { font-size: 8px; letter-spacing: 0.05em; font-weight: 700; color: #9cc6f7; }
+#maxBox .mlabel { font-size: 10px; letter-spacing: 0.05em; font-weight: 700; color: #9cc6f7; }
 #maxBox .mtime { font-size: 10.5px; letter-spacing: 0.08em; color: #cfe0f5; }
 #maxBox .mval { font-size: 15px; letter-spacing: 0.04em; font-weight: 700; color: #7db4f7; }
 
@@ -94,13 +98,12 @@ top: calc(6px + env(safe-area-inset-top, 0px)); right: 10px; height: 41px; align
 
 .windbox {
 position: fixed;
-top: calc(6px + env(safe-area-inset-top, 0px));
+top: calc(28px + env(safe-area-inset-top, 0px));
 left: 6px;
 display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
 padding: 4px 6px 4px 6px;
-background: radial-gradient(ellipse at 30% 25%, rgba(111,227,208,0.16), rgba(5,9,15,0.6) 72%);
+background: rgba(5,9,15,0.6);
 border-radius: 3px;
-box-shadow: 0 0 10px rgba(111,227,208,0.22), inset 0 0 6px rgba(111,227,208,0.1);
 }
 .windbox .windlabel {
 font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em;
@@ -279,7 +282,7 @@ font-family: var(--font-display); font-size:13px; letter-spacing:0.05em; font-we
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v11</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v12</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -597,7 +600,7 @@ rotorEl.setAttribute('transform', 'rotate(' + rotorAngle.toFixed(1) + ')');
 }
 if (!reduceMotion) requestAnimationFrame(rotorFrame);
 function setRotorPower(kw) {
-rotorTarget = kw < 15 ? 0 : 25 + 335 * Math.sqrt(Math.min(1, kw / (MAX_MW * 1000)));
+rotorTarget = kw < 15 ? 0 : 0.7 * (25 + 335 * Math.sqrt(Math.min(1, kw / (MAX_MW * 1000))));
 }
 
 // Anzeigefeld "Tagesmaximum-Einspeisung" (Kopfzeile, zwischen Windfeld und Stand)
@@ -622,10 +625,10 @@ maxBox.style.top = wb.top + 'px';
 maxBox.style.height = wb.height + 'px';
 // Ueberschrift schrumpft nur dann, wenn der Platz zu schmal wird
 const lab = maxBox.querySelector('.mlabel');
-lab.style.fontSize = '8px';
+lab.style.fontSize = '10px';
 const natural = lab.getBoundingClientRect().width;
 const avail = right - left - 6;
-if (natural > avail) lab.style.fontSize = Math.max(5.5, 8 * avail / natural).toFixed(2) + 'px';
+if (natural > avail) lab.style.fontSize = Math.max(6, 10 * avail / natural).toFixed(2) + 'px';
 }
 window.addEventListener('resize', layoutMaxBox);
 setInterval(layoutMaxBox, 5000);
