@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v16 (steht auch unten in der Anzeige) -->
+<!-- Version v17 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -78,7 +78,7 @@ font-family: var(--font-mono);
 .hdrcol .r3 { height: 15px; }
 .hdrcol .r1, .hdrcol .r2, .hdrcol .r3 { display: flex; align-items: center; justify-content: center; white-space: nowrap; line-height: 1; }
 #hdrRight {
-top: calc(28px + env(safe-area-inset-top, 0px)); right: 10px; height: 41px; align-items: flex-end; color: #f0e6d2;
+top: calc(28px - var(--lift, 0px) + env(safe-area-inset-top, 0px)); right: 10px; height: 41px; align-items: flex-end; color: #f0e6d2;
 }
 #hdrRight .r1, #hdrRight .r2, #hdrRight .r3 { justify-content: flex-end; }
 #hdrRight .r1 { gap: 6px; font-family: var(--font-display); font-size: 11px; letter-spacing: 0.08em; opacity: 0.95; }
@@ -99,7 +99,7 @@ top: calc(28px + env(safe-area-inset-top, 0px)); right: 10px; height: 41px; alig
 
 .windbox {
 position: fixed;
-top: calc(28px + env(safe-area-inset-top, 0px));
+top: calc(28px - var(--lift, 0px) + env(safe-area-inset-top, 0px));
 left: 6px;
 display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
 padding: 4px 6px 4px 6px;
@@ -296,7 +296,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v16</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v17</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -309,6 +309,9 @@ font-family: var(--font-mono); pointer-events: none;
 <script>
 (function () {
 const STORAGE_KEY = 'leistungsanzeige_endpoint';
+// Nur auf dem iPad (Bildschirm mind. 700 px, auch im Split View): Kopfzeile und Vergleichszeile 10 px nach oben
+const LIFT = Math.min(screen.width, screen.height) >= 700 ? 10 : 0;
+document.documentElement.style.setProperty('--lift', LIFT + 'px');
 const NS = 'http://www.w3.org/2000/svg';
 const CX = 200, CY = 200;
 const START_ANGLE = -130, END_ANGLE = 130, SWEEP = END_ANGLE - START_ANGLE;
@@ -780,7 +783,7 @@ function layoutVs() {
 if (vsBox.style.display === 'none') return;
 const wb = document.querySelector('.windbox').getBoundingClientRect();
 const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
-const hdrBottom = wb.bottom;
+const hdrBottom = wb.bottom + LIFT; // so rechnen, als waere die Kopfzeile nicht angehoben
 const dialTop = wr.top + wr.height * 0.01;
 const space = dialTop - hdrBottom;
 vsBox.style.width = Math.min(window.innerWidth - 24, wr.width) + 'px';
@@ -788,7 +791,7 @@ vsBox.classList.remove('tight');
 let h = vsBox.offsetHeight;
 if (space < h + 6) { vsBox.classList.add('tight'); h = vsBox.offsetHeight; }
 if (space < h + 4) { vsBox.style.display = 'none'; return; } // kein Platz: Zeile weglassen
-vsBox.style.top = (hdrBottom + (space - h) / 2).toFixed(1) + 'px';
+vsBox.style.top = (hdrBottom + (space - h) / 2 - LIFT).toFixed(1) + 'px'; // um LIFT angehoben, Abstand zur Kopfzeile bleibt gleich
 }
 function updateVs() {
 const now = Date.now();
