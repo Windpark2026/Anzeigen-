@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v14 (steht auch unten in der Anzeige) -->
+<!-- Version v15 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -84,6 +84,7 @@ top: calc(28px + env(safe-area-inset-top, 0px)); right: 10px; height: 41px; alig
 #hdrRight .r1 { gap: 6px; font-family: var(--font-display); font-size: 11px; letter-spacing: 0.08em; opacity: 0.95; }
 #hdrRight .r2 { font-size: 10.5px; letter-spacing: 0.08em; opacity: 0.85; }
 #hdrRight .r3 { font-size: 12px; letter-spacing: 0.04em; opacity: 0.95; }
+#hdrRight.stale .r2, #hdrRight.stale .r3 { color: #ff6b5a; opacity: 1; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: #6b5238; }
 .dot.live { background: #e8c570; animation: none; box-shadow: 0 0 4px #e8c570; }
 .dot.demo { background: #6b5238; animation: blink 1.4s steps(1) infinite; }
@@ -135,7 +136,6 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 .alr .adot { width: 7px; height: 7px; border-radius: 50%; background: #ff4a3a; flex: none; }
 .alr b { letter-spacing: 0.06em; color: #fff; flex: none; }
 .alr .amsg { overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-.alr .aseit { opacity: 0.75; flex: none; }
 .alr.warn { background: rgba(110,72,8,0.6); border-left-color: #ffb02e; color: #fff0d0; }
 .alr.warn .adot { background: #ffb02e; }
 .alr.more { background: none; border-left-color: transparent; justify-content: center; opacity: 0.8; padding: 0; }
@@ -269,7 +269,7 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v14</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v15</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -559,16 +559,6 @@ let currentAngle = START_ANGLE;
 let totalYieldMwh = 128456.734;
 let lastTickMs = Date.now();
 
-// iPhone-Heim-Bildschirm-App: Die gemeldete Fensterhoehe ist um die Statusleiste (ca. 59 px) zu klein -> unten bliebe ein Streifen.
-// Nur in diesem Fall wird der Hintergrund auf die volle Bildschirmhoehe gezogen.
-(function () {
-function fixHoehe() {
-const diff = screen.height - innerHeight;
-if (navigator.standalone && diff > 40 && diff < 80) { document.body.style.bottom = 'auto'; document.body.style.height = screen.height + 'px'; }
-}
-fixHoehe(); window.addEventListener('resize', fixHoehe);
-})();
-
 // ---- Meldungen (Alarme und Warnungen) unter dem Instrument ----
 const alarmBox = document.getElementById('alarmBox');
 const UMLAUT = [['waechter', 'w\u00E4chter'], ['Oel', '\u00D6l'], ['oel', '\u00F6l'], ['Ueber', '\u00DCber'], ['ueber', '\u00FCber']];
@@ -587,7 +577,6 @@ const dot = document.createElement('span'); dot.className = 'adot';
 const w = document.createElement('b'); w.textContent = 'WEA ' + a.wea;
 const m = document.createElement('span'); m.className = 'amsg'; m.textContent = schoen(String(a.text || ''));
 d.append(dot, w, m);
-if (a.seit) { const s = document.createElement('span'); s.className = 'aseit'; s.textContent = 'seit ' + new Date(a.seit).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); d.append(s); }
 alarmBox.append(d);
 });
 if (sorted.length > MAXROWS) { const mo = document.createElement('div'); mo.className = 'alr more'; mo.textContent = '+ ' + (sorted.length - rows.length) + ' weitere Meldungen'; alarmBox.append(mo); }
@@ -597,22 +586,37 @@ alarmBox.style.display = 'flex';
 alarmBox.style.opacity = (ts && Date.now() - ts > 10 * 60 * 1000) ? '0.45' : '1'; // veraltete Daten blasser
 }
 
-// ---- Diagnose: Antippen der Versionsnummer zeigt kurz die Bildschirmmasse ----
+// ---- Automatische Erneuerung: holt sich selbst die neueste Version von GitHub ----
 const verEl = document.getElementById('verSvg');
 const verHit = document.getElementById('verHit');
-if (verEl && verHit) {
-const verOrig = verEl.textContent;
-verHit.addEventListener('click', () => {
-const p = document.createElement('div');
-p.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
-document.body.appendChild(p);
-const cs = getComputedStyle(p);
-const txt = 'iH' + innerHeight + ' cH' + document.documentElement.clientHeight + ' sH' + screen.height + ' t' + parseInt(cs.paddingTop) + ' b' + parseInt(cs.paddingBottom);
-p.remove();
-verEl.textContent = txt;
-setTimeout(() => { verEl.textContent = verOrig; }, 12000);
-});
+const MEINE_VERSION = parseInt(((verEl && verEl.textContent) || '').replace(/\D/g, ''), 10) || 0;
+function neuLaden() { location.replace(location.pathname + '?neu=' + Date.now()); } // Adresse mit Zusatz umgeht den Zwischenspeicher
+async function pruefeNeueVersion() {
+try {
+const res = await fetch(location.pathname + '?pruefen=' + Date.now(), { cache: 'no-store' });
+if (!res.ok) return;
+const m = (await res.text()).match(/id="verSvg"[^>]*>v(\d+)</);
+if (!m) return;
+const neu = parseInt(m[1], 10);
+if (neu <= MEINE_VERSION) return;
+// Schutz vor Endlosschleife: pro Zielversion hoechstens 3 Versuche pro Stunde
+const key = 'neuladen_' + location.pathname;
+let st = {}; try { st = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) {}
+const jetzt = Date.now();
+if (st.v !== neu || jetzt - (st.t0 || 0) > 3600000) st = { v: neu, n: 0, t0: jetzt };
+if (st.n >= 3) return;
+st.n++; try { localStorage.setItem(key, JSON.stringify(st)); } catch (e) {}
+neuLaden();
+} catch (e) {}
 }
+setTimeout(pruefeNeueVersion, 60000);
+setInterval(pruefeNeueVersion, 5 * 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(pruefeNeueVersion, 3000); });
+if (verHit) verHit.addEventListener('click', neuLaden); // Notloesung: Versionsnummer antippen = neu laden
+
+// ---- Hinweis bei veralteten Daten: "Stand" wird rot ----
+const hdrRight = document.getElementById('hdrRight');
+function setStale(s) { hdrRight.classList.toggle('stale', !!s); }
 
 // Rotor in der Nabe: dreht sich schneller, je mehr Leistung
 const rotorEl = document.getElementById('rotorBlades');
@@ -771,6 +775,7 @@ window.setWindText(liveWindMs.toFixed(1).replace('.', ',') + ' m/s');
 
 const isLiveValue = kw !== null;
 renderMeldungen(isLiveValue ? liveMeldungen : null, dataTs);
+setStale(!isLiveValue || (dataTs > 0 && Date.now() - dataTs > 5 * 60 * 1000));
 if (kw === null) {
 demoKw += demoDirection * (Math.random() * 70);
 if (demoKw > 14700 || demoKw < -300) demoDirection *= -1;
