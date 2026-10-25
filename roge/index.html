@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v19 (steht auch unten in der Anzeige) -->
+<!-- Version v20 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -297,7 +297,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v19</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v20</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -597,7 +597,7 @@ function schoen(t) { UMLAUT.forEach(p => { t = t.split(p[0]).join(p[1]); }); ret
 function renderMeldungen(list, ts) {
 if (!Array.isArray(list) || list.length === 0) { alarmBox.textContent = ''; alarmBox.dataset.sig = ''; alarmBox.style.display = 'none'; return; }
 const sorted = list.slice().sort((a, b) => (a.typ === b.typ ? 0 : (a.typ === 'alarm' ? -1 : 1)) || String(a.wea).localeCompare(String(b.wea)));
-const MAXROWS = 3;
+const MAXROWS = 4;
 const rows = sorted.length > MAXROWS ? sorted.slice(0, MAXROWS - 1) : sorted;
 const sig = JSON.stringify(rows) + sorted.length;
 if (alarmBox.dataset.sig !== sig) {
