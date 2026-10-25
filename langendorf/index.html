@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v18 (steht auch unten in der Anzeige) -->
+<!-- Version v19 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -142,26 +142,26 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 
 /* Vergleich Langendorf gegen Roge (Leuchtbalken, Nixie-Stil) zwischen Kopfzeile und Zifferblatt */
 #vsBox {
-position: fixed; left: 50%; transform: translateX(-50%); top: 0; display: none; z-index: 2;
-background: #0a0807; border: 0.5px solid #2a1d14; border-radius: 8px; padding: 8px 12px 9px;
+position: fixed; left: 0; top: 0; display: none; z-index: 2;
+background: #0a0807; border: 0.5px solid #2a1d14; border-radius: 8px; padding: 7px 12px 8px;
 font-family: var(--font-mono); pointer-events: none;
 }
-.vrow { display: flex; align-items: flex-end; gap: 8px; }
+.vti { font-size: 11px; letter-spacing: 0.14em; color: #c9a47a; line-height: 1; text-align: center; margin-bottom: 6px; white-space: nowrap; }
+.vrow { display: flex; align-items: center; gap: 8px; height: 13px; }
 .vrow + .vrow { margin-top: 5px; }
-.vlbl { font-size: 11px; letter-spacing: 0.1em; color: #c9a47a; width: 82px; flex: none; line-height: 1; }
-.vtr { flex: 1; min-width: 0; margin-right: 18px; position: relative; padding-top: 15px; }
-.vseg { display: flex; gap: 2px; height: 10px; }
-.vseg i { display: block; flex: 1; border-radius: 1px; background: #2a1d14; }
-.vseg i.on { background: #ff9a3c; box-shadow: 0 0 3px #ff7a1a; }
+.vlbl { font-size: 11px; letter-spacing: 0.1em; color: #c9a47a; width: 82px; flex: none; line-height: 1; white-space: nowrap; }
+.vseg { display: flex; gap: 2px; height: 10px; flex: none; }
+.vseg i { display: block; flex: none; width: 5px; border-radius: 0; background: #2a1d14; }
+.vseg i.on { background: #ffa23f; }
 .vseg i.dm { background: #a8662c; }
-.vpc { position: absolute; top: 0; font-size: 13px; font-weight: 500; line-height: 14px; transform: translateX(-50%); white-space: nowrap; }
-.vpc.on { color: #ffa23f; text-shadow: 0 0 6px #ff7a1a; }
-.vpc.dm { color: #a8662c; text-shadow: 0 0 4px #7a3a0a; }
-#vsBox.tight { padding: 6px 10px 7px; }
+.vpc { width: 34px; flex: none; text-align: right; font-size: 13px; font-weight: 500; line-height: 13px; white-space: nowrap; }
+.vpc.on { color: #ffa23f; text-shadow: 0 0 4px rgba(255,122,26,0.7); }
+.vpc.dm { color: #a8662c; }
+#vsBox.tight { padding: 5px 10px 6px; }
+#vsBox.tight .vti { margin-bottom: 4px; }
 #vsBox.tight .vrow + .vrow { margin-top: 3px; }
-#vsBox.tight .vtr { padding-top: 13px; }
 #vsBox.tight .vseg { height: 8px; }
-#vsBox.tight .vpc { font-size: 12px; line-height: 12px; }
+#vsBox.tight .vpc { font-size: 12px; }
 </style>
 </head>
 <body>
@@ -200,8 +200,9 @@ font-family: var(--font-mono); pointer-events: none;
 </div>
 
 <div id="vsBox">
-<div class="vrow" data-k="langendorf"><span class="vlbl">LANGENDORF</span><div class="vtr"><div class="vseg"></div><span class="vpc on">--%</span></div></div>
-<div class="vrow" data-k="roge"><span class="vlbl">ROGE</span><div class="vtr"><div class="vseg"></div><span class="vpc dm">--%</span></div></div>
+<div class="vti">AUSLASTUNG WINDPARKS</div>
+<div class="vrow" data-k="langendorf"><span class="vlbl">LANGENDORF</span><div class="vseg"></div><span class="vpc on">--%</span></div>
+<div class="vrow" data-k="roge"><span class="vlbl">ROGE</span><div class="vseg"></div><span class="vpc dm">--%</span></div>
 </div>
 
 <div class="instrument-wrap">
@@ -303,7 +304,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v18</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v19</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -778,7 +779,7 @@ setTrend(el, trendShown.txt, trendShown.color, trendShown.unit);
 const VS_MY = 'langendorf';
 const VS_NENN_KW = { langendorf: 10500, roge: 14400 };
 const VS_OTHER_URL = 'https://api.npoint.io/94769e150c3d88b0650d'; // Daten von Roge
-const VS_SEGS = 30, VS_FRESH_MS = 5 * 60 * 1000;
+const VS_SEGS = 33, VS_GAP = 2, VS_FRESH_MS = 5 * 60 * 1000;
 const vsBox = document.getElementById('vsBox');
 const vsMy = { kw: null, ts: 0 }, vsOther = { kw: null, ts: 0 };
 let vsLastFetch = 0;
@@ -796,12 +797,27 @@ const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
 const hdrBottom = wb.bottom + LIFT; // so rechnen, als waere die Kopfzeile nicht angehoben
 const dialTop = wr.top + wr.height * 0.01;
 const space = dialTop - hdrBottom;
-vsBox.style.width = Math.min(window.innerWidth - 24, wr.width) + 'px';
+const w = Math.floor(Math.min(window.innerWidth - 24, wr.width)); // ganze Pixel: scharfe Kanten
+vsBox.style.width = w + 'px';
+vsBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
 vsBox.classList.remove('tight');
 let h = vsBox.offsetHeight;
 if (space < h + 6) { vsBox.classList.add('tight'); h = vsBox.offsetHeight; }
 if (space < h + 4) { vsBox.style.display = 'none'; return; } // kein Platz: Zeile weglassen
-vsBox.style.top = (hdrBottom + (space - h) / 2 - LIFT).toFixed(1) + 'px'; // um LIFT angehoben, Abstand zur Kopfzeile bleibt gleich
+// Segmente in ganzen Pixeln: Breite so waehlen, dass 33 Segmente + Luecken genau in die Zeile passen
+const cs = getComputedStyle(vsBox);
+const inner = w - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 1; // 1 = Rahmen
+const avail = inner - 16 - 34 - 82; // abzueglich 2 Abstaende, Prozentspalte, Mindestbreite Name
+const segW = Math.max(2, Math.floor((avail - (VS_SEGS - 1) * VS_GAP) / VS_SEGS));
+const barW = VS_SEGS * segW + (VS_SEGS - 1) * VS_GAP;
+['langendorf', 'roge'].forEach(function (k) {
+const row = vsBox.querySelector('[data-k="' + k + '"]');
+row.querySelector('.vlbl').style.width = Math.floor(inner - 16 - 34 - barW) + 'px'; // Rest geht an die Namensspalte
+const seg = row.querySelector('.vseg');
+seg.style.width = barW + 'px';
+for (let i = 0; i < seg.children.length; i++) seg.children[i].style.width = segW + 'px';
+});
+vsBox.style.top = Math.round(hdrBottom + (space - h) / 2 - LIFT) + 'px'; // um LIFT angehoben, Abstand zur Kopfzeile bleibt gleich
 }
 function updateVs() {
 const now = Date.now();
@@ -820,7 +836,6 @@ const r = vsRows[k];
 for (let i = 0; i < VS_SEGS; i++) r.cells[i].className = i < lit ? cls : '';
 r.pc.textContent = p + '%';
 r.pc.className = 'vpc ' + cls;
-r.pc.style.left = 'max(14px, ' + pct[k].toFixed(1) + '%)';
 });
 vsBox.style.display = 'block';
 layoutVs();
