@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v22 (steht auch unten in der Anzeige) -->
+<!-- Version v23 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -299,7 +299,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v22</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v23</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -664,6 +664,8 @@ if (verHit) verHit.addEventListener('click', neuLaden); // Notloesung: Versionsn
 // ---- Hinweis bei veralteten Daten: "Stand" wird rot ----
 const hdrRight = document.getElementById('hdrRight');
 function setStale(s) { hdrRight.classList.toggle('stale', !!s); }
+// Ab dieser Zeit ohne frische Daten (oder ohne Verbindung) werden Leistung, Zeiger, Ring und Rotor auf 0 gesetzt
+const NULL_NACH_MS = 5 * 60 * 1000;
 
 // Rotor in der Nabe: dreht sich schneller, je mehr Leistung
 const rotorEl = document.getElementById('rotorBlades');
@@ -776,6 +778,12 @@ setTrend(el, trendShown.txt, trendShown.color, trendShown.unit);
 trendShown = { txt: '\u25B6 \u00B10', color: '#9aa', unit: 'kW' };
 setTrend(el, trendShown.txt, trendShown.color, trendShown.unit);
 }
+}
+
+function clearTrend() {
+const el = document.getElementById('trendText');
+if (el) el.textContent = '';
+trendShown = null; trendPrevKw = null;
 }
 
 // ---- Vergleich Langendorf gegen Roge: Leistung im Verhaeltnis zur Nennleistung ----
@@ -904,20 +912,18 @@ window.setWindText(liveWindMs.toFixed(1).replace('.', ',') + ' m/s');
 }
 
 const isLiveValue = kw !== null;
+const datenAlt = isLiveValue && dataTs > 0 && Date.now() - dataTs > NULL_NACH_MS;
+const frisch = isLiveValue && !datenAlt; // nur frische Daten gelten als aktueller Messwert
 renderMeldungen(isLiveValue ? liveMeldungen : null, dataTs);
 setStale(!isLiveValue || (dataTs > 0 && Date.now() - dataTs > 5 * 60 * 1000));
 vsMy.kw = isLiveValue ? kw : null; vsMy.ts = dataTs;
 holeAnderen(); updateVs();
-if (kw === null) {
-demoKw += demoDirection * (Math.random() * 70);
-if (demoKw > 14700 || demoKw < -300) demoDirection *= -1;
-kw = demoKw;
-}
+if (!frisch) kw = 0; // keine frischen Daten: Ist-Leistung und Zeiger auf 0 (frueher: letzter Wert bzw. Demo-Wert)
 
 const { kwStr, mwStr } = formatPair(kw);
-if (isLiveValue) updateTrend(kw);
+if (frisch) updateTrend(kw); else clearTrend();
 setRotorPower(kw);
-if (isLiveValue) {
+if (frisch) {
 if (serverDayMax !== null) { if (kw > serverDayMax) drawDayMax(kw, Date.now()); else drawDayMax(serverDayMax, serverDayMaxTs); } // gemeinsamer Tageshoechstwert vom Server
 else updateDayMax(kw); // Notfall: lokal, falls Server ihn nicht liefert
 }
