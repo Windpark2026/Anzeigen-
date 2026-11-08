@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v30 (steht auch unten in der Anzeige) -->
+<!-- Version v31 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -334,7 +334,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v30</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v31</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -975,39 +975,57 @@ if (inScreen && ueberKopf && !cols.some(function (c) { return pgKollision(c, cx,
 }
 return false;
 }
-function layoutProg() {
-if (pgL.style.display === 'none') return;
-const cols = pgR.style.display === 'none' ? [pgL] : [pgL, pgR];
-let ok = false;
-// 1. Oben unter der Auslastungszeile, wenn noetig mit etwas verkleinertem Instrument
-const stufen = [1, 0.96, 0.92, 0.88];
-for (let i = 0; i < stufen.length && !ok; i++) {
-pgSetDs(stufen[i]);
+// Passt die Beschriftung "WINDVORHERSAGE" zwischen den Spalten, ohne den Ring zu beruehren? (Abstand mind. 4 px)
+function pgTitelPasst(cols) {
+if (cols.length < 2) return true;
+const l = pgL.getBoundingClientRect(), r = pgR.getBoundingClientRect();
+const x0 = l.right, x1 = r.left;
+if (x1 - x0 < 92) return false;
+const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
+const cx = wr.left + wr.width / 2, cy = wr.top + wr.height / 2, R = wr.width * 196 / 400;
+const nx = Math.max(x0, Math.min(cx, x1)), ny = Math.max(l.top, Math.min(cy, l.top + 13));
+return Math.hypot(nx - cx, ny - cy) >= R + 4;
+}
+function pgTitelZeigen(cols, sichtbar) {
+if (!sichtbar) { pgT.style.display = 'none'; return; }
+const l = pgL.getBoundingClientRect();
+let x, w;
+if (cols.length === 2) { const r = pgR.getBoundingClientRect(); x = l.right; w = r.left - l.right; }
+else { x = l.right + 6; w = 120; }
+pgT.style.left = Math.round(x) + 'px'; pgT.style.width = Math.round(w) + 'px'; pgT.style.top = Math.round(l.top) + 'px';
+pgT.style.display = 'block';
+}
+function pgOben(ds, cols) {
+pgSetDs(ds);
 const wb = document.querySelector('.windbox').getBoundingClientRect();
 let top = wb.bottom + 6;
 if (vsBox.style.display !== 'none') top = vsBox.getBoundingClientRect().bottom + 6;
-ok = pgProbe('oben', cols, top);
+return { top: top, ok: pgProbe('oben', cols, top) };
 }
-// 2. Sonst unten in den Ecken (ueber den Meldungen), Instrument in voller Groesse
+function layoutProg() {
+if (pgL.style.display === 'none') return;
+const cols = pgR.style.display === 'none' ? [pgL] : [pgL, pgR];
+const stufen = [1, 0.96, 0.92, 0.88, 0.84];
+let ok = false, ohneTitel = -1;
+// 1. Oben unter der Auslastungszeile, wenn noetig mit etwas verkleinertem Instrument (Spalten UND Beschriftung muessen passen)
+for (let i = 0; i < stufen.length && !ok; i++) {
+const o = pgOben(stufen[i], cols);
+if (!o.ok) continue;
+if (pgTitelPasst(cols)) { ok = true; pgTitelZeigen(cols, true); }
+else if (ohneTitel < 0) ohneTitel = i; // Spalten passen, nur die Beschriftung nicht
+}
+// 2. Passt es nur ohne Beschriftung, dann so (kleinste noetige Verkleinerung)
+if (!ok && ohneTitel >= 0) { ok = pgOben(stufen[ohneTitel], cols).ok; if (ok) pgTitelZeigen(cols, false); }
+// 3. Sonst unten in den Ecken (ueber den Meldungen), Instrument in voller Groesse
 if (!ok) {
 pgSetDs(1);
 const wb = document.querySelector('.windbox').getBoundingClientRect();
 let top = wb.bottom + 6;
 if (vsBox.style.display !== 'none') top = vsBox.getBoundingClientRect().bottom + 6;
 ok = pgProbe('unten', cols, top);
+if (ok) pgTitelZeigen(cols, pgTitelPasst(cols));
 }
-if (!ok) { pgHide(); return; } // kein Platz
-pgTitel(cols);
-}
-// Beschriftung "WINDVORHERSAGE" mittig zwischen den Spalten auf Hoehe der Kopfzeile
-function pgTitel(cols) {
-const l = pgL.getBoundingClientRect();
-let x, w;
-if (cols.length === 2) { const r = pgR.getBoundingClientRect(); x = l.right; w = r.left - l.right; }
-else { x = l.right + 6; w = 120; }
-if (w < 92) { pgT.style.display = 'none'; return; } // zu eng: weglassen
-pgT.style.left = Math.round(x) + 'px'; pgT.style.width = Math.round(w) + 'px'; pgT.style.top = Math.round(l.top) + 'px';
-pgT.style.display = 'block';
+if (!ok) pgHide(); // kein Platz
 }
 window.addEventListener('resize', layoutProg);
 setInterval(updateProg, 60000); // alte Zeitpunkte nachziehen
