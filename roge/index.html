@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v29 (steht auch unten in der Anzeige) -->
+<!-- Version v30 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -147,6 +147,8 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 /* Windprognose (aus claVis): zwei gleich aufgebaute Spalten links und rechts neben dem Instrument, ohne Rahmen */
 .pgc { position: fixed; top: 0; display: none; z-index: 2; font-family: var(--font-mono); pointer-events: none;
 text-shadow: 0 0 3px #000, 0 0 5px #000; }
+#pgT { position: fixed; display: none; z-index: 2; font-family: var(--font-mono); font-size: 9px; line-height: 13px; letter-spacing: 0.08em;
+color: #9dffc0; text-align: center; text-shadow: 0 0 3px #000, 0 0 5px #000; white-space: nowrap; pointer-events: none; }
 #pgL { left: 6px; } #pgR { right: 6px; }
 .pgc .pr { display: flex; align-items: center; height: 17px; gap: 2px; }
 .pgc .pt { height: 13px; margin-bottom: 2px; }
@@ -231,7 +233,7 @@ font-family: var(--font-mono); pointer-events: none;
 <div class="vrow" data-k="roge"><span class="vlbl">ROGE</span><div class="vseg"></div><span class="vpc dm">--%</span></div>
 </div>
 
-<div class="pgc" id="pgL"></div><div class="pgc" id="pgR"></div>
+<div class="pgc" id="pgL"></div><div class="pgc" id="pgR"></div><div id="pgT">WINDVORHERSAGE</div>
 
 <div class="instrument-wrap">
 <svg id="dial" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
@@ -325,7 +327,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v29</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v30</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -899,11 +901,11 @@ window.addEventListener('resize', layoutVs);
 // Links die ersten 4, rechts die naechsten 4 Zeitpunkte, beide Spalten gleich aufgebaut: Wochentag, Zeit, Balken, Wert.
 const PG_MAX_ALTER_MS = 6 * 3600 * 1000; // Prognose aelter als 6 h: ausblenden
 const PG_VERGANGEN_MS = 90 * 60 * 1000; // Zeitpunkte, die schon laenger her sind, weglassen
-const pgL = document.getElementById('pgL'), pgR = document.getElementById('pgR');
+const pgL = document.getElementById('pgL'), pgR = document.getElementById('pgR'), pgT = document.getElementById('pgT');
 const PG_WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 let pgData = null, pgTs = 0;
 function pgSlotMs(it) { const t = new Date(it.d + 'T' + it.z + ':00').getTime(); return isNaN(t) ? 0 : t; }
-function pgHide() { pgL.style.display = 'none'; pgR.style.display = 'none'; }
+function pgHide() { pgL.style.display = 'none'; pgR.style.display = 'none'; pgT.style.display = 'none'; }
 function pgColumn(items, first, mitKopf) {
 const mx = 4.5;
 let html = '<div class="pr pt"><span class="pw">So</span><span class="pz">ZEIT</span><span class="pc">&middot;</span><span class="pv">m/s</span></div>';
@@ -984,7 +986,18 @@ let top = wb.bottom + 6;
 if (vsBox.style.display !== 'none') top = vsBox.getBoundingClientRect().bottom + 6;
 ok = pgProbe('unten', cols, top);
 }
-if (!ok) pgHide(); // kein Platz
+if (!ok) { pgHide(); return; } // kein Platz
+pgTitel(cols);
+}
+// Beschriftung "WINDVORHERSAGE" mittig zwischen den Spalten auf Hoehe der Kopfzeile
+function pgTitel(cols) {
+const l = pgL.getBoundingClientRect();
+let x, w;
+if (cols.length === 2) { const r = pgR.getBoundingClientRect(); x = l.right; w = r.left - l.right; }
+else { x = l.right + 6; w = 120; }
+if (w < 92) { pgT.style.display = 'none'; return; } // zu eng: weglassen
+pgT.style.left = Math.round(x) + 'px'; pgT.style.width = Math.round(w) + 'px'; pgT.style.top = Math.round(l.top) + 'px';
+pgT.style.display = 'block';
 }
 window.addEventListener('resize', layoutProg);
 setInterval(updateProg, 60000); // alte Zeitpunkte nachziehen
