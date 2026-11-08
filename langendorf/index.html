@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v28 (steht auch unten in der Anzeige) -->
+<!-- Version v29 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -148,22 +148,21 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 .pgc { position: fixed; top: 0; display: none; z-index: 2; font-family: var(--font-mono); pointer-events: none;
 text-shadow: 0 0 3px #000, 0 0 5px #000; }
 #pgL { left: 6px; } #pgR { right: 6px; }
-.pgc .pr { display: flex; align-items: center; height: 17px; gap: 5px; }
+.pgc .pr { display: flex; align-items: center; height: 17px; gap: 2px; }
 .pgc .pt { height: 13px; margin-bottom: 2px; }
 .pgc .pt span { font-size: 9px; letter-spacing: 0.06em; color: #9dffc0; text-align: center; line-height: 13px; white-space: nowrap; }
 .pgc.s1 .pr { height: 15px; } .pgc.s2 .pr { height: 14px; } .pgc.s3 .pr { height: 13px; }
 .pgc.s2 .pz, .pgc.s2 .pv, .pgc.s3 .pz, .pgc.s3 .pv { font-size: 12px; }
-.pgc.s3 .pc { height: 10px; }
-.pgc.s2 .pr, .pgc.s3 .pr, .pgc.s4 .pr { gap: 3px; }
+.pgc.s2 .pr, .pgc.s3 .pr, .pgc.s4 .pr { gap: 2px; }
 .pgc.s2 .pw, .pgc.s3 .pw, .pgc.s4 .pw { width: 14px; }
 .pgc.s2 .pz, .pgc.s3 .pz, .pgc.s4 .pz { width: 36px; }
 .pgc.s2 .pv, .pgc.s3 .pv, .pgc.s4 .pv { width: 24px; }
-.pgc.s4 .pr { height: 12px; } .pgc.s4 .pz, .pgc.s4 .pv { font-size: 11px; } .pgc.s4 .pc { height: 9px; width: 7px; } .pgc.s4 .pw { font-size: 9px; width: 13px; } .pgc.s4 .pz { width: 32px; } .pgc.s4 .pv { width: 22px; }
+.pgc.s4 .pr { height: 12px; gap: 2px; } .pgc.s4 .pz, .pgc.s4 .pv { font-size: 11px; } .pgc.s4 .pc { width: 4px; font-size: 11px; } .pgc.s4 .pw { font-size: 9px; width: 13px; } .pgc.s4 .pz { width: 32px; } .pgc.s4 .pv { width: 22px; }
 .pgc .pw { width: 16px; flex: none; font-size: 10px; color: #7fe0a4; }
 .pgc .pt .pw { visibility: hidden; }
 .pgc .pz { width: 40px; flex: none; font-size: 13px; color: #b8ffd2; text-align: center; }
-.pgc .pc { width: 8px; height: 13px; border-radius: 2px; flex: none; }
-.pgc .pt .pc { height: auto; background: none; text-align: center; width: 8px; overflow: visible; }
+.pgc .pc { width: 5px; flex: none; text-align: center; font-size: 13px; color: #9dffc0; }
+.pgc .pt .pc { font-size: 9px; }
 .pgc .pv { width: 28px; flex: none; font-size: 13px; color: #5dff95; text-align: center; }
 .pgc .pr.first .pv { color: #d6ffe6; font-weight: 600; }
 
@@ -333,7 +332,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v28</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v29</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -922,7 +921,7 @@ items.forEach(function (it, i) {
 const k = Math.max(0, Math.min(1, it.ms / mx));
 const wt = PG_WT[new Date(it.d + 'T12:00:00').getDay()];
 html += '<div class="pr' + (first && i === 0 ? ' first' : '') + '"><span class="pw">' + wt + '</span><span class="pz">' + it.z + '</span>' +
-'<span class="pc" style="background:rgba(93,255,149,' + (0.2 + 0.8 * k).toFixed(2) + ')"></span>' +
+'<span class="pc">:</span>' +
 '<span class="pv">' + it.ms.toFixed(1).replace('.', ',') + '</span></div>';
 });
 return html;
