@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v32 (steht auch unten in der Anzeige) -->
+<!-- Version v33 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -166,7 +166,9 @@ color: #9dffc0; text-align: center; text-shadow: 0 0 3px #000, 0 0 5px #000; whi
 .pgc .pc { width: 5px; flex: none; text-align: center; font-size: 13px; color: #9dffc0; }
 .pgc .pt .pc { font-size: 9px; }
 .pgc .pv { width: 28px; flex: none; font-size: 13px; color: #5dff95; text-align: center; }
-.pgc .pr.first .pv { color: #d6ffe6; font-weight: 600; }
+/* aktueller Wert: ganze Zeile in #D23AE7, ohne Schattenglow (scharf) */
+.pgc .pr.first { text-shadow: none; }
+.pgc .pr.first span { color: #D23AE7; font-weight: 700; -webkit-font-smoothing: antialiased; }
 
 /* Vergleich Langendorf gegen Roge (Leuchtbalken, Nixie-Stil) zwischen Kopfzeile und Zifferblatt */
 #vsBox {
@@ -334,7 +336,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v32</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v33</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1208,6 +1210,3 @@ setWindText('6,4 m/s');
 window.setWindText = setWindText;
 })();
 </script>
-
-</body>
-</html>
