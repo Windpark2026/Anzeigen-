@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v33 (steht auch unten in der Anzeige) -->
+<!-- Version v34 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -336,7 +336,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v33</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v34</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1109,8 +1109,12 @@ const { kwStr, mwStr } = formatPair(kw);
 if (frisch) updateTrend(kw); else clearTrend();
 setRotorPower(kw);
 if (frisch) {
-if (serverDayMax !== null) { if (kw > serverDayMax) drawDayMax(kw, Date.now()); else drawDayMax(serverDayMax, serverDayMaxTs); } // gemeinsamer Tageshoechstwert vom Server
-else updateDayMax(kw); // Notfall: lokal, falls Server ihn nicht liefert
+updateDayMax(kw); // v34: eigenes Gedaechtnis im Geraet (zeigt immer den groesseren Wert)
+if (serverDayMax !== null && serverDayMax > dayMaxKw) { // Server-Wert groesser: uebernehmen und mit merken
+dayMaxKw = serverDayMax; dayMaxTs = serverDayMaxTs || Date.now();
+try { localStorage.setItem('dayMaxKw_langendorf', JSON.stringify({ d: todayKey(), kw: dayMaxKw, t: dayMaxTs })); } catch (e) {}
+drawDayMax(dayMaxKw, dayMaxTs);
+}
 }
 renderKwDigits(kwStr);
 mwText.textContent = mwStr;
