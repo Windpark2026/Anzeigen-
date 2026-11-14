@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v34 (steht auch unten in der Anzeige) -->
+<!-- Version v35 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -138,6 +138,9 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 .alr .amsg { overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
 .alr.warn { background: rgba(110,72,8,0.6); border-left-color: #ffb02e; color: #fff0d0; }
 .alr.warn .adot { background: #ffb02e; }
+.alr.stop { background: rgba(20,90,95,0.6); border-left-color: #4fd6cf; color: #e6fffd; } /* v35: externer Stopp (Code 58), tuerkis */
+.alr.stop .adot { background: #4fd6cf; }
+#alarmBox, .alr, .alr b, .alr .amsg { -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; text-shadow: none; filter: none; } /* v35: scharfe Schrift */
 .alr.more { background: none; border-left-color: transparent; justify-content: center; opacity: 0.8; padding: 6px 0 2px; pointer-events: auto; cursor: pointer; }
 #alarmBox.open { z-index: 50; background: rgba(4,12,16,0.92); padding: 6px; border-radius: 4px; pointer-events: auto; left: 8px; right: 8px; }
 #alarmBox.open .alr.more { opacity: 1; }
@@ -329,7 +332,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v34</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v35</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -635,7 +638,8 @@ if (v) alarmOpenTimer = setTimeout(() => { alarmOpen = false; if (window.__lastM
 function renderMeldungen(list, ts) {
 window.__lastMel = { list, ts };
 if (!Array.isArray(list) || list.length === 0) { alarmBox.textContent = ''; alarmBox.dataset.sig = ''; alarmBox.style.display = 'none'; return; }
-const sorted = list.slice().sort((a, b) => (a.typ === b.typ ? 0 : (a.typ === 'alarm' ? -1 : 1)) || String(a.wea).localeCompare(String(b.wea)));
+const RANG = { alarm: 0, stopp: 1 };
+const sorted = list.slice().sort((a, b) => ((RANG[a.typ] !== undefined ? RANG[a.typ] : 2) - (RANG[b.typ] !== undefined ? RANG[b.typ] : 2)) || String(a.label || a.wea).localeCompare(String(b.label || b.wea)));
 const MAXROWS = 4;
 if (sorted.length <= MAXROWS) alarmOpen = false;
 const rows = (sorted.length > MAXROWS && !alarmOpen) ? sorted.slice(0, MAXROWS - 1) : sorted;
@@ -643,9 +647,9 @@ const sig = JSON.stringify(rows) + sorted.length + alarmOpen;
 if (alarmBox.dataset.sig !== sig) {
 alarmBox.textContent = '';
 rows.forEach(a => {
-const d = document.createElement('div'); d.className = 'alr' + (a.typ === 'alarm' ? '' : ' warn');
+const d = document.createElement('div'); d.className = 'alr' + (a.typ === 'alarm' ? '' : (a.typ === 'stopp' ? ' stop' : ' warn'));
 const dot = document.createElement('span'); dot.className = 'adot';
-const w = document.createElement('b'); w.textContent = 'WEA ' + a.wea;
+const w = document.createElement('b'); w.textContent = a.label ? String(a.label) : 'WEA ' + a.wea;
 const m = document.createElement('span'); m.className = 'amsg'; m.textContent = schoen(String(a.text || ''));
 d.append(dot, w, m);
 alarmBox.append(d);
