@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v35 (steht auch unten in der Anzeige) -->
+<!-- Version v36 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -195,6 +195,23 @@ font-family: var(--font-mono); pointer-events: none;
 #vsBox.tight .vrow + .vrow { margin-top: 3px; }
 #vsBox.tight .vseg { height: 8px; }
 #vsBox.tight .vpc { font-size: 12px; }
+/* v36: Tagesduell (Vollaststunden heute), ueber der Auslastungszeile */
+#duBox {
+position: fixed; left: 0; top: 0; display: none; z-index: 2; box-sizing: border-box;
+background: #080c16; border: 1px solid #2a3344; border-radius: 8px; padding: 4px 10px 4px;
+font-family: var(--font-mono); pointer-events: none;
+-webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; text-shadow: none; filter: none;
+}
+#duBox .dti { font-size: 9.5px; letter-spacing: 0.14em; color: #c9b07a; line-height: 10px; height: 10px; text-align: center; white-space: nowrap; overflow: hidden; }
+#duBox .dbar { position: relative; height: 14px; margin-top: 3px; }
+#duBox .dbar i { position: absolute; top: 3px; height: 8px; display: block; }
+#duBox .dbar .dr { left: 0; background: #e8a23a; }
+#duBox .dbar .dl { background: #58b4e8; }
+#duBox .dbar .dk { top: 11px; width: 1px; height: 3px; background: #4a5568; }
+#duBox .dbar .dm { top: 0; width: 2px; height: 14px; background: #f1d58a; }
+#duBox .dlab { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px; height: 13px; font-size: 10px; font-weight: 700; line-height: 13px; white-space: nowrap; }
+#duBox .dlr { color: #e8a23a; }
+#duBox .dll { color: #58b4e8; }
 </style>
 </head>
 <body>
@@ -231,6 +248,8 @@ font-family: var(--font-mono); pointer-events: none;
 <g id="windDots"></g>
 </svg>
 </div>
+
+<div id="duBox"><div class="dti"></div><div class="dbar"><i class="dr"></i><i class="dl"></i></div><div class="dlab"><span class="dlr"></span><span class="dll"></span></div></div>
 
 <div id="vsBox">
 <div class="vti">AUSLASTUNG WINDPARKS</div>
@@ -339,7 +358,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v35</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v36</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -849,19 +868,35 @@ for (let i = 0; i < VS_SEGS; i++) seg.appendChild(document.createElement('i'));
 vsRows[k] = { cells: seg.children, pc: row.querySelector('.vpc') };
 });
 function layoutVs() {
-if (vsBox.style.display === 'none') return;
-const wb = document.querySelector('.windbox').getBoundingClientRect();
 const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
+const curS = parseFloat(document.documentElement.style.getPropertyValue('--dy')) || 0;
+const setS = function (s) { if (Math.abs(s - curS) > 0.01) document.documentElement.style.setProperty('--dy', s + 'px'); };
+if (vsBox.style.display === 'none') { duBox.style.display = 'none'; setS(pgDyReq); return; }
+const wb = document.querySelector('.windbox').getBoundingClientRect();
 const hdrBottom = wb.bottom + LIFT; // so rechnen, als waere die Kopfzeile nicht angehoben
-const dialTop = wr.top + wr.height * 0.01;
-const space = dialTop - hdrBottom;
 const w = Math.floor(Math.min(window.innerWidth - 24, wr.width)); // ganze Pixel: scharfe Kanten
 vsBox.style.width = w + 'px';
 vsBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
 vsBox.classList.remove('tight');
-let h = vsBox.offsetHeight;
+const showDu = duInfo !== null && !duOff;
+let dialTop = wr.top + wr.height * 0.01;
+let space = dialTop - hdrBottom;
+let h = vsBox.offsetHeight, hd = 0;
+if (showDu) {
+duBox.style.width = w + 'px'; duBox.style.left = vsBox.style.left; duBox.style.display = 'block';
+duZeichne(w); hd = duBox.offsetHeight + duGap;
+// Platz fuer beide Boxen schaffen: Instrument nach unten schieben (Verschiebung = das Groessere aus Prognose-Wunsch und Bedarf)
+const space0 = space - curS; // Platz ohne jede Verschiebung
+const bedarf = Math.max(0, h + hd + 6 - space0);
+const S = Math.max(pgDyReq, bedarf);
+setS(S); space = space0 + S;
+h += hd;
+} else {
+duBox.style.display = 'none';
+setS(pgDyReq); space = (space - curS) + pgDyReq;
 if (space < h + 6) { vsBox.classList.add('tight'); h = vsBox.offsetHeight; }
 if (space < h + 4) { vsBox.style.display = 'none'; return; } // kein Platz: Zeile weglassen
+}
 // Segmente in ganzen Pixeln: Breite so waehlen, dass 33 Segmente + Luecken genau in die Zeile passen
 const cs = getComputedStyle(vsBox);
 const inner = w - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 1; // 1 = Rahmen
@@ -875,13 +910,85 @@ const seg = row.querySelector('.vseg');
 seg.style.width = barW + 'px';
 for (let i = 0; i < seg.children.length; i++) seg.children[i].style.width = segW + 'px';
 });
-vsBox.style.top = Math.round(hdrBottom + (space - h) / 2 - LIFT) + 'px'; // um LIFT angehoben, Abstand zur Kopfzeile bleibt gleich
+const top = Math.round(hdrBottom + (space - h) / 2 - LIFT); // um LIFT angehoben, Abstand zur Kopfzeile bleibt gleich
+if (showDu) { duBox.style.top = top + 'px'; vsBox.style.top = (top + hd) + 'px'; }
+else vsBox.style.top = top + 'px';
+}
+// Tagesduell hat Vorrang: erst Instrument nach unten (in layoutVs), reicht der Platz unter dem Instrument nicht,
+// stufenweise verkleinern (96/92/88 %); geht auch das nicht, wird das Duell weggelassen. Alarmzeilen werden nie beruehrt.
+let duDs = 1;
+function duPasst() {
+const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
+const S = parseFloat(document.documentElement.style.getPropertyValue('--dy')) || 0;
+const alarmTop = alarmBox.style.display !== 'none' ? alarmBox.getBoundingClientRect().top : window.innerHeight - 10;
+const raum = alarmTop - 6 - (wr.bottom - S); // so weit darf es insgesamt nach unten
+return S <= Math.max(0, raum) + 0.5;
+}
+function duPlan() {
+duDs = 1;
+if (duInfo === null || vsBox.style.display === 'none') { duOff = false; return; }
+duOff = false;
+const cur = parseFloat(document.documentElement.style.getPropertyValue('--ds')) || 1;
+layoutVs();
+if (duPasst()) { duDs = cur; return; }
+const stufen = [1, 0.96, 0.92, 0.88];
+for (let i = 0; i < stufen.length; i++) {
+document.documentElement.style.setProperty('--ds', stufen[i]); pgDyReq = 0; layoutVs();
+if (duPasst()) { duDs = stufen[i]; return; }
+}
+duOff = true; document.documentElement.style.setProperty('--ds', 1); pgDyReq = 0; layoutVs();
+}
+
+// ---- v36: Tagesduell: Vollaststunden heute = (Gesamtertrag - Tagesstart) / Nennleistung ----
+// Tagesstart = Gesamtertrag beim ersten frischen Lesen des Tages (vom Script mitgeschickt). Nur wenn von heute.
+const duBox = document.getElementById('duBox');
+const duMy = { g: NaN, s: NaN, sts: 0, tag: '' }, duOther = { g: NaN, s: NaN, sts: 0, tag: '' };
+let duInfo = null, duOff = false, duSig = '', pgDyReq = 0, duGap = 4;
+function duLies(o, d) {
+o.g = parseFloat(d.gesamtertrag_mwh); o.s = parseFloat(d.tagesstart_mwh);
+o.sts = parseInt(d.tagesstart_ts, 10) || 0; o.tag = d.tagesstart_tag || '';
+}
+function duBerechne() {
+duInfo = null;
+const now = Date.now();
+if (!(vsMy.ts > 0 && vsOther.ts > 0 && now - vsMy.ts < VS_FRESH_MS && now - vsOther.ts < VS_FRESH_MS)) return;
+const my = duMy, ot = duOther;
+if ([my.g, my.s, ot.g, ot.s].some(function (x) { return isNaN(x); })) return;
+if (my.tag !== todayKey() || ot.tag !== todayKey()) return; // Tagesstart nicht von heute: nicht anzeigen
+const m1 = my.g - my.s, m2 = ot.g - ot.s;
+if (m1 < 0 || m2 < 0 || m1 > 400 || m2 > 400) return; // unplausibel (z. B. Zaehlerspruenge): nicht anzeigen
+const k = {}; k[VS_MY] = m1; k[VS_MY === 'langendorf' ? 'roge' : 'langendorf'] = m2;
+const t = new Date(Math.max(my.sts, ot.sts)), mid = new Date(); mid.setHours(0, 0, 0, 0);
+const spaet = Math.max(my.sts, ot.sts) - mid.getTime() > 30 * 60000; // Tagesstart spaeter als 00:30: Uhrzeit nennen
+duInfo = { rm: k.roge, lm: k.langendorf, rv: k.roge / (VS_NENN_KW.roge / 1000), lv: k.langendorf / (VS_NENN_KW.langendorf / 1000),
+seit: spaet ? ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) : '' };
+}
+function duKomma(x, n) { return x.toFixed(n).replace('.', ','); }
+function duZeichne(w) { // w = Breite der Box; alles in ganzen Pixeln (scharf)
+const bar = duBox.querySelector('.dbar'), I = duInfo;
+const inner = w - 22; // Rahmen 2 + Innenabstand 20
+bar.style.width = inner + 'px';
+const sum = I.rv + I.lv, ratio = (I.rv - I.lv) / (sum + 0.4); // +0,4 h: am Tagesanfang keine wilden Ausschlaege
+const pos = Math.max(0.08, Math.min(0.92, 0.5 + ratio * 1.5));
+const x = Math.round(inner * pos);
+bar.querySelector('.dr').style.width = x + 'px';
+const dl = bar.querySelector('.dl'); dl.style.left = x + 'px'; dl.style.width = (inner - x) + 'px';
+bar.querySelectorAll('.dk, .dm').forEach(function (e) { e.remove(); });
+for (let i = 0; i <= 20; i++) { const e = document.createElement('i'); e.className = 'dk'; e.style.left = Math.min(inner - 1, Math.round(inner * i / 20)) + 'px'; bar.appendChild(e); }
+const mk = document.createElement('i'); mk.className = 'dm'; mk.style.left = Math.max(0, x - 1) + 'px'; bar.appendChild(mk);
+duBox.querySelector('.dti').textContent = 'TAGESDUELL · VOLLASTSTUNDEN' + (I.seit ? ' · SEIT ' + I.seit : '');
+const lr = duBox.querySelector('.dlr'), ll = duBox.querySelector('.dll');
+lr.textContent = 'ROGE ' + duKomma(I.rv, 2) + ' h · ' + duKomma(I.rm, 1) + ' MWh';
+ll.textContent = duKomma(I.lv, 2) + ' h · ' + duKomma(I.lm, 1) + ' MWh LANGENDORF';
+if (lr.offsetWidth + ll.offsetWidth + 12 > inner) { // zu schmal: MWh weglassen
+lr.textContent = 'ROGE ' + duKomma(I.rv, 2) + ' h'; ll.textContent = duKomma(I.lv, 2) + ' h LANGENDORF';
+}
 }
 function updateVs() {
 const now = Date.now();
 const ok = vsMy.kw !== null && vsOther.kw !== null && vsMy.ts > 0 && vsOther.ts > 0 &&
 now - vsMy.ts < VS_FRESH_MS && now - vsOther.ts < VS_FRESH_MS; // zu alte Daten: Zeile ausblenden
-if (!ok) { vsBox.style.display = 'none'; return; }
+if (!ok) { const had = duSig !== ''; vsBox.style.display = 'none'; duBox.style.display = 'none'; duInfo = null; duSig = ''; layoutVs(); if (had) layoutProg(); return; }
 const kws = {}; kws[VS_MY] = vsMy.kw; kws[VS_MY === 'langendorf' ? 'roge' : 'langendorf'] = vsOther.kw;
 const pct = {};
 ['langendorf', 'roge'].forEach(function (k) { pct[k] = Math.max(0, Math.min(100, kws[k] / VS_NENN_KW[k] * 100)); });
@@ -896,7 +1003,10 @@ r.pc.textContent = p + '%';
 r.pc.className = 'vpc ' + cls;
 });
 vsBox.style.display = 'block';
+duBerechne();
+const sig = duInfo ? (duInfo.seit + '|' + (window.innerWidth) + '|' + (duOff ? 1 : 0)) : '';
 layoutVs();
+if ((duInfo ? 1 : 0) !== (duSig ? 1 : 0)) { duSig = sig; layoutProg(); } else duSig = sig;
 }
 async function holeAnderen() {
 const jetzt = Date.now();
@@ -908,7 +1018,8 @@ const d = await res.json();
 const k = parseFloat(d.leistung_kw);
 vsOther.kw = isNaN(k) ? null : k;
 vsOther.ts = parseInt(d.ts, 10) || 0;
-} catch (e) { vsOther.kw = null; }
+duLies(duOther, d);
+} catch (e) { vsOther.kw = null; duOther.g = NaN; }
 updateVs();
 }
 window.addEventListener('resize', layoutVs);
@@ -1001,8 +1112,8 @@ else { x = l.right + 6; w = 120; }
 pgT.style.left = Math.round(x) + 'px'; pgT.style.width = Math.round(w) + 'px'; pgT.style.top = Math.round(l.top) + 'px';
 pgT.style.display = 'block';
 }
-function pgSetDy(dy) { // Instrument nach unten schieben (Mitte bleibt auf gleicher Breite)
-document.documentElement.style.setProperty('--dy', dy + 'px');
+function pgSetDy(dy) { // Instrument nach unten schieben (Mitte bleibt auf gleicher Breite); layoutVs setzt die Verschiebung = max(Wunsch, Bedarf Tagesduell)
+pgDyReq = dy;
 layoutVs();
 if (typeof layoutMaxBox === 'function') layoutMaxBox();
 }
@@ -1020,13 +1131,14 @@ const ok = pgProbe('oben', cols, top);
 return { ok: ok, titel: ok && pgTitelPasst(cols) };
 }
 function layoutProg() {
+duPlan();
 if (pgL.style.display === 'none') return;
 const cols = pgR.style.display === 'none' ? [pgL] : [pgL, pgR];
 // 0. Zustand von eben noch gut? Dann nichts veraendern (kein Springen).
 let v = pgVersuch(cols);
 if (v.ok && v.titel) { pgTitelZeigen(cols, true); return; }
 // 1. Suche: Instrument zuerst nach unten schieben (Groesse bleibt), dann stufenweise etwas verkleinern.
-const stufen = [1, 0.96, 0.92, 0.88];
+const stufen = [1, 0.96, 0.92, 0.88].filter(function (x) { return x <= duDs + 0.001; });
 let ok = false, merk = null;
 for (let i = 0; i < stufen.length && !ok; i++) {
 pgSetDs(stufen[i]); pgSetDy(0);
@@ -1044,7 +1156,7 @@ if (d === mx) break;
 if (!ok && merk) { pgSetDs(merk.ds); pgSetDy(merk.dy); ok = pgVersuch(cols).ok; if (ok) pgTitelZeigen(cols, false); }
 // 3. Sonst unten in den Ecken (ueber den Meldungen), Instrument unveraendert
 if (!ok) {
-pgSetDs(1); pgSetDy(0);
+pgSetDs(duDs); pgSetDy(0);
 const wb = document.querySelector('.windbox').getBoundingClientRect();
 let top = wb.bottom + 6;
 if (vsBox.style.display !== 'none') top = vsBox.getBoundingClientRect().bottom + 6;
@@ -1083,6 +1195,7 @@ if (!isNaN(w)) liveWindMs = w;
 if (Array.isArray(data.meldungen)) liveMeldungen = data.meldungen;
 if (Array.isArray(data.prognose)) { pgData = data.prognose; pgTs = parseInt(data.prognose_ts, 10) || 0; updateProg(); }
 dataTs = parseInt(data.ts, 10) || 0;
+duLies(duMy, data);
 if (data.tagesmax_kw !== undefined && data.tagesmax_kw !== null && data.tagesmax_tag === todayKey()) {
 const m = parseFloat(data.tagesmax_kw);
 if (!isNaN(m)) { serverDayMax = m; serverDayMaxTs = parseInt(data.tagesmax_ts, 10) || 0; }
@@ -1105,7 +1218,7 @@ const datenAlt = isLiveValue && dataTs > 0 && Date.now() - dataTs > NULL_NACH_MS
 const frisch = isLiveValue && !datenAlt; // nur frische Daten gelten als aktueller Messwert
 renderMeldungen(isLiveValue ? liveMeldungen : null, dataTs);
 setStale(!isLiveValue || (dataTs > 0 && Date.now() - dataTs > 5 * 60 * 1000));
-vsMy.kw = isLiveValue ? kw : null; vsMy.ts = dataTs;
+vsMy.kw = isLiveValue ? kw : null; vsMy.ts = dataTs; if (!isLiveValue) duMy.g = NaN;
 holeAnderen(); updateVs();
 if (!frisch) kw = 0; // keine frischen Daten: Ist-Leistung und Zeiger auf 0 (frueher: letzter Wert bzw. Demo-Wert)
 
