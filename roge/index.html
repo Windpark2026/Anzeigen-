@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v36 (steht auch unten in der Anzeige) -->
+<!-- Version v38 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -195,23 +195,16 @@ font-family: var(--font-mono); pointer-events: none;
 #vsBox.tight .vrow + .vrow { margin-top: 3px; }
 #vsBox.tight .vseg { height: 8px; }
 #vsBox.tight .vpc { font-size: 12px; }
-/* v36: Tagesduell (Vollaststunden heute), ueber der Auslastungszeile */
+/* v38: Tagesduell als Tageskurve (zwei Linien: Ertrag seit Tagesstart, nach Parkgroesse umgerechnet) */
 #duBox {
 position: fixed; left: 0; top: 0; display: none; z-index: 2; box-sizing: border-box;
-background: #080c16; border: 1px solid #2a3344; border-radius: 8px; padding: 4px 10px 4px;
+background: #080c16; border: 1px solid #2a3344; border-radius: 8px; padding: 4px 8px 4px;
 font-family: var(--font-mono); pointer-events: none;
 -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; text-shadow: none; filter: none;
 }
 #duBox .dti { font-size: 9.5px; letter-spacing: 0.14em; color: #c9b07a; line-height: 10px; height: 10px; text-align: center; white-space: nowrap; overflow: hidden; }
-#duBox .dbar { position: relative; height: 14px; margin-top: 3px; }
-#duBox .dbar i { position: absolute; top: 3px; height: 8px; display: block; }
-#duBox .dbar .dr { left: 0; background: #e8a23a; }
-#duBox .dbar .dl { background: #58b4e8; }
-#duBox .dbar .dk { top: 11px; width: 1px; height: 3px; background: #4a5568; }
-#duBox .dbar .dm { top: 0; width: 2px; height: 14px; background: #f1d58a; }
-#duBox .dlab { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px; height: 13px; font-size: 10px; font-weight: 700; line-height: 13px; white-space: nowrap; }
-#duBox .dlr { color: #e8a23a; }
-#duBox .dll { color: #58b4e8; }
+#duBox svg { display: block; margin-top: 2px; overflow: visible; }
+#duBox svg text { font-family: var(--font-mono), monospace; }
 </style>
 </head>
 <body>
@@ -249,7 +242,7 @@ font-family: var(--font-mono); pointer-events: none;
 </svg>
 </div>
 
-<div id="duBox"><div class="dti"></div><div class="dbar"><i class="dr"></i><i class="dl"></i></div><div class="dlab"><span class="dlr"></span><span class="dll"></span></div></div>
+<div id="duBox"><div class="dti"></div><svg class="dsv" height="36"></svg></div>
 
 <div id="vsBox">
 <div class="vti">AUSLASTUNG WINDPARKS</div>
@@ -351,7 +344,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v36</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v38</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -861,7 +854,7 @@ function layoutVs() {
 const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
 const curS = parseFloat(document.documentElement.style.getPropertyValue('--dy')) || 0;
 const setS = function (s) { if (Math.abs(s - curS) > 0.01) document.documentElement.style.setProperty('--dy', s + 'px'); };
-if (vsBox.style.display === 'none') { duBox.style.display = 'none'; setS(pgDyReq); return; }
+if (vsBox.style.display === 'none') { duBox.style.display = 'none'; setS(Math.max(0, pgDyReq)); return; }
 const wb = document.querySelector('.windbox').getBoundingClientRect();
 const hdrBottom = wb.bottom + LIFT; // so rechnen, als waere die Kopfzeile nicht angehoben
 const w = Math.floor(Math.min(window.innerWidth - 24, wr.width)); // ganze Pixel: scharfe Kanten
@@ -876,14 +869,16 @@ if (showDu) {
 duBox.style.width = w + 'px'; duBox.style.left = vsBox.style.left; duBox.style.display = 'block';
 duZeichne(w); hd = duBox.offsetHeight + duGap;
 // Platz fuer beide Boxen schaffen: Instrument nach unten schieben (Verschiebung = das Groessere aus Prognose-Wunsch und Bedarf)
-const space0 = space - curS; // Platz ohne jede Verschiebung
-const bedarf = Math.max(0, h + hd + 6 - space0);
+// v37: Duell + Auslastung sitzen ganz oben (DU_TOP px unter der Kopfzeile); das Instrument rutscht nur so weit
+// nach unten, wie es dafuer noetig ist (mehr Platz unten fuer die Meldungen)
+const bedarf = (wb.bottom + DU_TOP + h + hd + DU_BOT) - (dialTop - curS); // darf negativ sein: Instrument rutscht nach oben
+duBedarf = bedarf;
 const S = Math.max(pgDyReq, bedarf);
-setS(S); space = space0 + S;
+setS(S); space = (dialTop - curS) + S - hdrBottom;
 h += hd;
 } else {
-duBox.style.display = 'none';
-setS(pgDyReq); space = (space - curS) + pgDyReq;
+duBox.style.display = 'none'; duBedarf = 0;
+setS(Math.max(0, pgDyReq)); space = (space - curS) + Math.max(0, pgDyReq);
 if (space < h + 6) { vsBox.classList.add('tight'); h = vsBox.offsetHeight; }
 if (space < h + 4) { vsBox.style.display = 'none'; return; } // kein Platz: Zeile weglassen
 }
@@ -901,7 +896,7 @@ seg.style.width = barW + 'px';
 for (let i = 0; i < seg.children.length; i++) seg.children[i].style.width = segW + 'px';
 });
 const top = Math.round(hdrBottom + (space - h) / 2 - LIFT); // um LIFT angehoben, Abstand zur Kopfzeile bleibt gleich
-if (showDu) { duBox.style.top = top + 'px'; vsBox.style.top = (top + hd) + 'px'; }
+if (showDu) { const t0 = Math.round(wb.bottom + DU_TOP); duBox.style.top = t0 + 'px'; vsBox.style.top = (t0 + hd) + 'px'; }
 else vsBox.style.top = top + 'px';
 }
 // Tagesduell hat Vorrang: erst Instrument nach unten (in layoutVs), reicht der Platz unter dem Instrument nicht,
@@ -923,21 +918,25 @@ layoutVs();
 if (duPasst()) { duDs = cur; return; }
 const stufen = [1, 0.96, 0.92, 0.88];
 for (let i = 0; i < stufen.length; i++) {
-document.documentElement.style.setProperty('--ds', stufen[i]); pgDyReq = 0; layoutVs();
+document.documentElement.style.setProperty('--ds', stufen[i]); pgDyReq = -9999; layoutVs();
 if (duPasst()) { duDs = stufen[i]; return; }
 }
-duOff = true; document.documentElement.style.setProperty('--ds', 1); pgDyReq = 0; layoutVs();
+duOff = true; document.documentElement.style.setProperty('--ds', 1); pgDyReq = -9999; layoutVs();
 }
 
 // ---- v36: Tagesduell: Vollaststunden heute = (Gesamtertrag - Tagesstart) / Nennleistung ----
 // Tagesstart = Gesamtertrag beim ersten frischen Lesen des Tages (vom Script mitgeschickt). Nur wenn von heute.
 const duBox = document.getElementById('duBox');
-const duMy = { g: NaN, s: NaN, sts: 0, tag: '' }, duOther = { g: NaN, s: NaN, sts: 0, tag: '' };
-let duInfo = null, duOff = false, duSig = '', pgDyReq = 0, duGap = 4;
+const duMy = { g: NaN, s: NaN, sts: 0, tag: '', v: null }, duOther = { g: NaN, s: NaN, sts: 0, tag: '', v: null };
+let duInfo = null, duOff = false, duSig = '', pgDyReq = -9999, duGap = 3;
+let pgForce = true;
+const DU_TOP = 3, DU_BOT = 5; let duBedarf = 0;
 function duLies(o, d) {
 o.g = parseFloat(d.gesamtertrag_mwh); o.s = parseFloat(d.tagesstart_mwh);
 o.sts = parseInt(d.tagesstart_ts, 10) || 0; o.tag = d.tagesstart_tag || '';
+o.v = (Array.isArray(d.tagesverlauf) && d.tagesverlauf_tag === todayKey()) ? d.tagesverlauf : null; // Punkte [Minute des Tages, MWh seit Start]
 }
+function duMin(ts) { const t = new Date(ts); return t.getHours() * 60 + t.getMinutes(); }
 function duBerechne() {
 duInfo = null;
 const now = Date.now();
@@ -947,38 +946,63 @@ if ([my.g, my.s, ot.g, ot.s].some(function (x) { return isNaN(x); })) return;
 if (my.tag !== todayKey() || ot.tag !== todayKey()) return; // Tagesstart nicht von heute: nicht anzeigen
 const m1 = my.g - my.s, m2 = ot.g - ot.s;
 if (m1 < 0 || m2 < 0 || m1 > 400 || m2 > 400) return; // unplausibel (z. B. Zaehlerspruenge): nicht anzeigen
-const k = {}; k[VS_MY] = m1; k[VS_MY === 'langendorf' ? 'roge' : 'langendorf'] = m2;
+const other = VS_MY === 'langendorf' ? 'roge' : 'langendorf';
+const k = {}; k[VS_MY] = m1; k[other] = m2;
+const src = {}; src[VS_MY] = my; src[other] = ot;
+const nowMin = duMin(now);
+const lines = {};
+['roge', 'langendorf'].forEach(function (p) {
+const o = src[p], nenn = VS_NENN_KW[p] / 1000;
+let pts = (o.v || []).filter(function (q) { return q && q.length === 2 && q[0] <= nowMin; }).map(function (q) { return [q[0], q[1] / nenn]; });
+if (!pts.length) pts = [[duMin(o.sts), 0]]; // aeltere Scripts: Startpunkt
+if (pts[pts.length - 1][0] < nowMin || pts.length === 1) pts.push([Math.max(nowMin, pts[pts.length - 1][0]), k[p] / nenn]); // aktueller Punkt
+else pts[pts.length - 1] = [pts[pts.length - 1][0], k[p] / nenn];
+lines[p] = pts;
+});
 const t = new Date(Math.max(my.sts, ot.sts)), mid = new Date(); mid.setHours(0, 0, 0, 0);
 const spaet = Math.max(my.sts, ot.sts) - mid.getTime() > 30 * 60000; // Tagesstart spaeter als 00:30: Uhrzeit nennen
-duInfo = { rm: k.roge, lm: k.langendorf, rv: k.roge / (VS_NENN_KW.roge / 1000), lv: k.langendorf / (VS_NENN_KW.langendorf / 1000),
+duInfo = { rm: k.roge, lm: k.langendorf, rv: k.roge / (VS_NENN_KW.roge / 1000), lv: k.langendorf / (VS_NENN_KW.langendorf / 1000), lines: lines,
 seit: spaet ? ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) : '' };
 }
 function duKomma(x, n) { return x.toFixed(n).replace('.', ','); }
-function duZeichne(w) { // w = Breite der Box; alles in ganzen Pixeln (scharf)
-const bar = duBox.querySelector('.dbar'), I = duInfo;
-const inner = w - 22; // Rahmen 2 + Innenabstand 20
-bar.style.width = inner + 'px';
-const sum = I.rv + I.lv, ratio = (I.rv - I.lv) / (sum + 0.4); // +0,4 h: am Tagesanfang keine wilden Ausschlaege
-const pos = Math.max(0.08, Math.min(0.92, 0.5 + ratio * 1.5));
-const x = Math.round(inner * pos);
-bar.querySelector('.dr').style.width = x + 'px';
-const dl = bar.querySelector('.dl'); dl.style.left = x + 'px'; dl.style.width = (inner - x) + 'px';
-bar.querySelectorAll('.dk, .dm').forEach(function (e) { e.remove(); });
-for (let i = 0; i <= 20; i++) { const e = document.createElement('i'); e.className = 'dk'; e.style.left = Math.min(inner - 1, Math.round(inner * i / 20)) + 'px'; bar.appendChild(e); }
-const mk = document.createElement('i'); mk.className = 'dm'; mk.style.left = Math.max(0, x - 1) + 'px'; bar.appendChild(mk);
-duBox.querySelector('.dti').textContent = 'TAGESDUELL · VOLLASTSTUNDEN' + (I.seit ? ' · SEIT ' + I.seit : '');
-const lr = duBox.querySelector('.dlr'), ll = duBox.querySelector('.dll');
-lr.textContent = 'ROGE ' + duKomma(I.rv, 2) + ' h · ' + duKomma(I.rm, 1) + ' MWh';
-ll.textContent = duKomma(I.lv, 2) + ' h · ' + duKomma(I.lm, 1) + ' MWh LANGENDORF';
-if (lr.offsetWidth + ll.offsetWidth + 12 > inner) { // zu schmal: MWh weglassen
-lr.textContent = 'ROGE ' + duKomma(I.rv, 2) + ' h'; ll.textContent = duKomma(I.lv, 2) + ' h LANGENDORF';
-}
+function duZeichne(w) { // w = Breite der Box (ganze Pixel)
+const I = duInfo, svg = duBox.querySelector('.dsv');
+const inner = w - 18; // Rahmen 2 + Innenabstand 16
+const kurz = inner < 330;
+const lw = kurz ? 92 : 124; // Breite der Werte rechts
+const x0 = 3, x1 = inner - lw - 6, pw = x1 - x0;
+const y0 = 3, y1 = 25; // Zeichenflaeche (22 px hoch), darunter die Uhrzeiten
+const ymax = Math.max(0.5, Math.max(I.rv, I.lv) * 1.15);
+const X = function (m) { return Math.round(x0 + pw * Math.min(1440, m) / 1440) + 0.5; };
+const Y = function (h) { return Math.round((y1 - (y1 - y0) * h / ymax) * 2) / 2; };
+svg.setAttribute('width', inner); svg.setAttribute('viewBox', '0 0 ' + inner + ' 36');
+let h = '';
+[0, 6, 12, 18, 24].forEach(function (hh) {
+const x = X(hh * 60);
+h += '<line x1="' + x + '" y1="' + y0 + '" x2="' + x + '" y2="' + (y1 + 3) + '" stroke="' + (hh % 24 ? '#243044' : '#4a5568') + '" stroke-width="1" shape-rendering="crispEdges"/>';
+h += '<text x="' + x + '" y="35" text-anchor="' + (hh === 0 ? 'start' : (hh === 24 ? 'end' : 'middle')) + '" font-size="8.5" fill="#8a97a8">' + (hh < 10 ? '0' : '') + hh + '</text>';
+});
+h += '<line x1="' + x0 + '" y1="' + (y1 + 0.5) + '" x2="' + x1 + '" y2="' + (y1 + 0.5) + '" stroke="#4a5568" stroke-width="1" shape-rendering="crispEdges"/>';
+const farbe = { roge: '#e8a23a', langendorf: '#58b4e8' };
+['roge', 'langendorf'].forEach(function (p) {
+const pts = I.lines[p];
+h += '<polyline fill="none" stroke="' + farbe[p] + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" points="' + pts.map(function (q) { return X(q[0]) + ',' + Y(q[1]); }).join(' ') + '"/>';
+const e = pts[pts.length - 1];
+h += '<circle cx="' + X(e[0]) + '" cy="' + Y(e[1]) + '" r="2.4" fill="' + farbe[p] + '"/>';
+});
+// Werte rechts: der Fuehrende steht oben
+const reihe = [['roge', 'ROGE', I.rm, I.rv], ['langendorf', 'LANGENDORF', I.lm, I.lv]].sort(function (a, b) { return b[3] - a[3]; });
+reihe.forEach(function (r, i) {
+h += '<text x="' + inner + '" y="' + (11 + i * 14) + '" text-anchor="end" font-size="10" font-weight="700" fill="' + farbe[r[0]] + '">' + r[1] + ' ' + duKomma(r[2], 1) + (kurz ? '' : ' MWh') + '</text>';
+});
+svg.innerHTML = h;
+duBox.querySelector('.dti').textContent = 'TAGESKURVE · ERTRAG HEUTE' + (I.seit ? ' · AB ' + I.seit : '');
 }
 function updateVs() {
 const now = Date.now();
 const ok = vsMy.kw !== null && vsOther.kw !== null && vsMy.ts > 0 && vsOther.ts > 0 &&
 now - vsMy.ts < VS_FRESH_MS && now - vsOther.ts < VS_FRESH_MS; // zu alte Daten: Zeile ausblenden
-if (!ok) { const had = duSig !== ''; vsBox.style.display = 'none'; duBox.style.display = 'none'; duInfo = null; duSig = ''; layoutVs(); if (had) layoutProg(); return; }
+if (!ok) { const had = duSig !== ''; vsBox.style.display = 'none'; duBox.style.display = 'none'; duInfo = null; duSig = ''; layoutVs(); if (had) { pgForce = true; layoutProg(); } return; }
 const kws = {}; kws[VS_MY] = vsMy.kw; kws[VS_MY === 'langendorf' ? 'roge' : 'langendorf'] = vsOther.kw;
 const pct = {};
 ['langendorf', 'roge'].forEach(function (k) { pct[k] = Math.max(0, Math.min(100, kws[k] / VS_NENN_KW[k] * 100)); });
@@ -996,7 +1020,7 @@ vsBox.style.display = 'block';
 duBerechne();
 const sig = duInfo ? (duInfo.seit + '|' + (window.innerWidth) + '|' + (duOff ? 1 : 0)) : '';
 layoutVs();
-if ((duInfo ? 1 : 0) !== (duSig ? 1 : 0)) { duSig = sig; layoutProg(); } else duSig = sig;
+if ((duInfo ? 1 : 0) !== (duSig ? 1 : 0)) { duSig = sig; pgForce = true; layoutProg(); } else duSig = sig;
 }
 async function holeAnderen() {
 const jetzt = Date.now();
@@ -1126,14 +1150,16 @@ if (pgL.style.display === 'none') return;
 const cols = pgR.style.display === 'none' ? [pgL] : [pgL, pgR];
 // 0. Zustand von eben noch gut? Dann nichts veraendern (kein Springen).
 let v = pgVersuch(cols);
-if (v.ok && v.titel) { pgTitelZeigen(cols, true); return; }
+if (!pgForce && v.ok && v.titel) { pgTitelZeigen(cols, true); return; }
+pgForce = false;
 // 1. Suche: Instrument zuerst nach unten schieben (Groesse bleibt), dann stufenweise etwas verkleinern.
 const stufen = [1, 0.96, 0.92, 0.88].filter(function (x) { return x <= duDs + 0.001; });
 let ok = false, merk = null;
 for (let i = 0; i < stufen.length && !ok; i++) {
 pgSetDs(stufen[i]); pgSetDy(0);
 const mx = pgDyMax();
-for (let dy = 0; dy <= mx + 7 && !ok; dy += 8) {
+const dyStart = Math.floor(Math.min(0, duBedarf)); // v37: Instrument darf auch nach oben ruecken (mehr Platz unten)
+for (let dy = dyStart; dy <= mx + 7 && !ok; dy += 8) {
 const d = Math.min(dy, mx);
 pgSetDy(d);
 v = pgVersuch(cols);
