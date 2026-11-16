@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v39 (steht auch unten in der Anzeige) -->
+<!-- Version v40 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -344,7 +344,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v39</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v40</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -860,7 +860,8 @@ const setS = function (s) { if (Math.abs(s - curS) > 0.01) document.documentElem
 if (vsBox.style.display === 'none') { duBox.style.display = 'none'; setS(Math.max(0, pgDyReq)); return; }
 const wb = document.querySelector('.windbox').getBoundingClientRect();
 const hdrBottom = wb.bottom + LIFT; // so rechnen, als waere die Kopfzeile nicht angehoben
-const w = Math.floor(Math.min(window.innerWidth - 24, wr.width)); // ganze Pixel: scharfe Kanten
+const dsNow = parseFloat(document.documentElement.style.getPropertyValue('--ds')) || 1; // v40: Breite nicht mit dem verkleinerten Instrument schrumpfen lassen
+const w = Math.floor(Math.min(window.innerWidth - 24, wr.width / dsNow)); // ganze Pixel: scharfe Kanten
 vsBox.style.width = w + 'px';
 vsBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
 vsBox.classList.remove('tight');
