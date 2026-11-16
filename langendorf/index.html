@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v38 (steht auch unten in der Anzeige) -->
+<!-- Version v39 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -351,7 +351,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v38</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v39</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -651,20 +651,23 @@ let lastTickMs = Date.now();
 const alarmBox = document.getElementById('alarmBox');
 const UMLAUT = [['waechter', 'w\u00E4chter'], ['Oel', '\u00D6l'], ['oel', '\u00F6l'], ['Ueber', '\u00DCber'], ['ueber', '\u00FCber']];
 function schoen(t) { UMLAUT.forEach(p => { t = t.split(p[0]).join(p[1]); }); return t; }
-// Antippen von "+ N weitere Meldungen" klappt die ganze Liste auf; nach 20 Sekunden klappt sie von selbst wieder zu.
-let alarmOpen = false, alarmOpenTimer = null;
-function setAlarmOpen(v) {
-alarmOpen = v; clearTimeout(alarmOpenTimer);
-if (v) alarmOpenTimer = setTimeout(() => { alarmOpen = false; if (window.__lastMel) renderMeldungen(window.__lastMel.list, window.__lastMel.ts); }, 20000);
-}
+// Antippen von "+ N weitere Meldungen" klappt die ganze Liste auf; sie bleibt offen, bis "weniger anzeigen" angetippt wird (v39: kein Selbst-Zuklappen mehr).
+let alarmOpen = false;
+function setAlarmOpen(v) { alarmOpen = v; }
 function renderMeldungen(list, ts) {
 window.__lastMel = { list, ts };
 if (!Array.isArray(list) || list.length === 0) { alarmBox.textContent = ''; alarmBox.dataset.sig = ''; alarmBox.style.display = 'none'; return; }
+// v39: Anzeige nach Anlage (WEA-Nummer) sortiert; Sammelzeilen ("Park", "4 Anlagen") zuerst; je Anlage Alarm vor Stopp vor Warnung.
+// Eingeklappt bleiben die wichtigsten Meldungen sichtbar (Alarme zuerst), nur in der Reihenfolge nach WEA.
 const RANG = { alarm: 0, stopp: 1 };
-const sorted = list.slice().sort((a, b) => ((RANG[a.typ] !== undefined ? RANG[a.typ] : 2) - (RANG[b.typ] !== undefined ? RANG[b.typ] : 2)) || String(a.label || a.wea).localeCompare(String(b.label || b.wea)));
+const rk = a => (RANG[a.typ] !== undefined ? RANG[a.typ] : 2);
+const wn = a => { const v = parseInt(a.wea, 10); return (a.wea === '' || a.wea === undefined || a.wea === null) ? -1 : (isNaN(v) ? 999 : v); };
+const nachWea = (a, b) => (wn(a) - wn(b)) || (rk(a) - rk(b));
+const nachWichtig = (a, b) => (rk(a) - rk(b)) || (wn(a) - wn(b));
+const sorted = list.slice().sort(nachWea);
 const MAXROWS = 4;
 if (sorted.length <= MAXROWS) alarmOpen = false;
-const rows = (sorted.length > MAXROWS && !alarmOpen) ? sorted.slice(0, MAXROWS - 1) : sorted;
+const rows = (sorted.length > MAXROWS && !alarmOpen) ? sorted.slice().sort(nachWichtig).slice(0, MAXROWS - 1).sort(nachWea) : sorted;
 const sig = JSON.stringify(rows) + sorted.length + alarmOpen;
 if (alarmBox.dataset.sig !== sig) {
 alarmBox.textContent = '';
@@ -926,7 +929,7 @@ duOff = false;
 const cur = parseFloat(document.documentElement.style.getPropertyValue('--ds')) || 1;
 layoutVs();
 if (duPasst()) { duDs = cur; return; }
-const stufen = [1, 0.96, 0.92, 0.88];
+const stufen = [1, 0.96, 0.92, 0.88, 0.84, 0.80, 0.76, 0.72]; // v39: Tageskurve hat Vorrang, auch bei vielen Meldungen
 for (let i = 0; i < stufen.length; i++) {
 document.documentElement.style.setProperty('--ds', stufen[i]); pgDyReq = -9999; layoutVs();
 if (duPasst()) { duDs = stufen[i]; return; }
@@ -1155,6 +1158,7 @@ const ok = pgProbe('oben', cols, top);
 return { ok: ok, titel: ok && pgTitelPasst(cols) };
 }
 function layoutProg() {
+if (alarmBox.classList.contains('open')) return; // v39: bei aufgeklappter Meldungsliste (liegt ueber dem Instrument) nichts neu berechnen
 duPlan();
 if (pgL.style.display === 'none') return;
 const cols = pgR.style.display === 'none' ? [pgL] : [pgL, pgR];
@@ -1163,7 +1167,8 @@ let v = pgVersuch(cols);
 if (!pgForce && v.ok && v.titel) { pgTitelZeigen(cols, true); return; }
 pgForce = false;
 // 1. Suche: Instrument zuerst nach unten schieben (Groesse bleibt), dann stufenweise etwas verkleinern.
-const stufen = [1, 0.96, 0.92, 0.88].filter(function (x) { return x <= duDs + 0.001; });
+let stufen = [1, 0.96, 0.92, 0.88].filter(function (x) { return x <= duDs + 0.001; });
+if (!stufen.length) stufen = [duDs];
 let ok = false, merk = null;
 for (let i = 0; i < stufen.length && !ok; i++) {
 pgSetDs(stufen[i]); pgSetDy(0);
