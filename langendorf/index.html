@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v43 (steht auch unten in der Anzeige) -->
+<!-- Version v44 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -199,6 +199,7 @@ color: #9dffc0; text-align: center; text-shadow: 0 0 3px #000, 0 0 5px #000; whi
 .pgc .pt .pc { font-size: 9px; }
 .pgc .pv { width: 28px; flex: none; font-size: 13px; color: #5dff95; text-align: center; }
 /* aktueller Wert: ganze Zeile in #D23AE7, ohne Schattenglow (scharf) */
+.pgc.w4 .pv { width: 36px; } .pgc.w4.s2 .pv, .pgc.w4.s3 .pv { width: 32px; } .pgc.w4.s4 .pv { width: 30px; } /* v44: zweistellige Windwerte ("12,3"): rechte Spalte waechst nach links, linke nach rechts; Abstand zum Ring wird weiter geprueft */
 .pgc .pr.first { text-shadow: none; }
 .pgc .pr.first span { color: #D23AE7; font-weight: 700; -webkit-font-smoothing: antialiased; }
 
@@ -382,7 +383,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v43</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v44</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1046,6 +1047,8 @@ h += '<line x1="' + x + '" y1="' + y0 + '" x2="' + x + '" y2="' + (y1 + 3) + '" 
 h += '<text x="' + x + '" y="47" text-anchor="' + (hh === 0 ? 'start' : (hh === 24 ? 'end' : 'middle')) + '" font-size="8.5" fill="#8a97a8">' + (hh < 10 ? '0' : '') + hh + '</text>';
 });
 h += '<line x1="' + x0 + '" y1="' + (y1 + 0.5) + '" x2="' + x1 + '" y2="' + (y1 + 0.5) + '" stroke="#4a5568" stroke-width="1" shape-rendering="crispEdges"/>';
+h += '<text x="' + (x0 + 4) + '" y="' + (y0 + 7) + '" text-anchor="start" font-size="8.5" fill="#8a97a8">MWh</text>'; // v44: Einheit oben am linken Strich
+h += '<text x="' + (x1 + 5) + '" y="47" text-anchor="start" font-size="8.5" fill="#8a97a8">Uhrzeit</text>'; // v44: rechts neben der 24
 const farbe = { roge: '#e8a23a', langendorf: '#58b4e8' };
 ['roge', 'langendorf'].forEach(function (p) {
 const pts = I.lines[p];
@@ -1056,7 +1059,7 @@ h += '<circle cx="' + X(e[0]) + '" cy="' + Y(e[1]) + '" r="2.4" fill="' + farbe[
 // Werte rechts: der Fuehrende steht oben
 const reihe = [['roge', 'ROGE', I.rm, I.rv], ['langendorf', 'LANGENDORF', I.lm, I.lv]].sort(function (a, b) { return b[3] - a[3]; });
 reihe.forEach(function (r, i) {
-h += '<text x="' + inner + '" y="' + (11 + i * 14) + '" text-anchor="end" font-size="10" font-weight="700" fill="' + farbe[r[0]] + '">' + r[1] + ' ' + duKomma(r[2], 1) + (kurz ? '' : ' MWh') + '</text>';
+h += '<text x="' + inner + '" y="' + (17 + i * 14) + '" text-anchor="end" font-size="10" font-weight="700" fill="' + farbe[r[0]] + '">' + r[1] + ' ' + duKomma(r[2], 1) + (kurz ? '' : ' MWh') + '</text>';
 });
 svg.innerHTML = h;
 duBox.querySelector('.dti').textContent = 'TAGESKURVE · ERTRAG HEUTE' + (I.seit ? ' · AB ' + I.seit : '');
@@ -1107,7 +1110,7 @@ const PG_MAX_ALTER_MS = 6 * 3600 * 1000; // Prognose aelter als 6 h: ausblenden
 const PG_VERGANGEN_MS = 90 * 60 * 1000; // Zeitpunkte, die schon laenger her sind, weglassen
 const pgL = document.getElementById('pgL'), pgR = document.getElementById('pgR'), pgT = document.getElementById('pgT');
 const PG_WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-let pgData = null, pgTs = 0;
+let pgData = null, pgTs = 0, pgW4 = false; // v44: pgW4 = ein Wert >= 10 m/s (vierstellig, z. B. "12,3"): Wertespalte etwas breiter
 function pgSlotMs(it) { const t = new Date(it.d + 'T' + it.z + ':00').getTime(); return isNaN(t) ? 0 : t; }
 function pgHide() { pgL.style.display = 'none'; pgR.style.display = 'none'; pgT.style.display = 'none'; }
 function pgColumn(items, first, mitKopf) {
@@ -1130,6 +1133,7 @@ const items = pgData.filter(function (it) {
 return it && it.d && it.z && typeof it.ms === 'number' && pgSlotMs(it) > now - PG_VERGANGEN_MS;
 }).slice(0, 8);
 if (!items.length || window.innerWidth < 330) return;
+pgW4 = items.some(function (it) { return it.ms.toFixed(1).length >= 4; });
 pgL.innerHTML = pgColumn(items.slice(0, 4), true);
 pgL.style.display = 'block';
 if (items.length > 4) { pgR.innerHTML = pgColumn(items.slice(4), false); pgR.style.display = 'block'; }
@@ -1155,7 +1159,7 @@ function pgProbe(pos, cols, topPx) {
 const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
 const cx = wr.left + wr.width / 2, cy = wr.top + wr.height / 2, R = wr.width * 196 / 400;
 for (let step = 0; step < 5; step++) {
-pgL.className = 'pgc s' + step; pgR.className = 'pgc s' + step;
+pgL.className = 'pgc s' + step + (pgW4 ? ' w4' : ''); pgR.className = 'pgc s' + step + (pgW4 ? ' w4' : '');
 if (pos === 'oben') { pgL.style.top = pgR.style.top = Math.round(topPx) + 'px'; pgL.style.bottom = pgR.style.bottom = 'auto'; }
 else {
 pgL.style.top = pgR.style.top = 'auto';
