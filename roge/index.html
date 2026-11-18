@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v40 (steht auch unten in der Anzeige) -->
+<!-- Version v41 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -146,7 +146,23 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 #alarmBox.open .alr.more { opacity: 1; }
 
 
-.instrument-wrap { width: calc(min(92vmin, 720px) * var(--ds, 1)); height: calc(min(92vmin, 720px) * var(--ds, 1)); transform: translateY(var(--dy, 0px)); }
+.instrument-wrap { width: calc(min(92vmin, 720px) * var(--ds, 1) * var(--wf, 1)); height: calc(min(92vmin, 720px) * var(--ds, 1) * var(--wf, 1));
+transform: translate(max(0px, calc(var(--wcol, 0px) + (min(92vmin, 720px) * var(--ds, 1) * var(--wf, 1)) / 2 - 50vw)), var(--dy, 0px)); } /* v41: bei WEA-Spalte etwas kleiner und nach rechts */
+/* v41: Spalte "WEAs am Netz" links neben dem Instrument (gruen + drehend = speist ein, grau = nicht am Netz) */
+#weaCol { position: fixed; left: 4px; top: 0; width: 48px; display: none; flex-direction: column; align-items: center; z-index: 3; pointer-events: none; font-family: var(--font-mono); }
+#weaCol .wi { display: flex; flex-direction: column; align-items: center; }
+#weaCol .wsym { position: relative; }
+#weaCol .wsym svg { display: block; position: absolute; left: 0; overflow: visible; }
+#weaCol .wlab { font-size: 10px; line-height: 10px; margin-top: 1px; color: #7d8a94; letter-spacing: 0; }
+#weaCol .wi.on .wlab { color: #bfeccf; }
+#weaCol .wi.def .wlab { color: #4d5861; }
+#weaCol .wrot, #weaCol .wtow { stroke: #5d6a74; }
+#weaCol .wi.on .wrot, #weaCol .wi.on .wtow { stroke: #3ddc84; }
+#weaCol .wi.def .wrot, #weaCol .wi.def .wtow { stroke: #3a444c; stroke-dasharray: 2.5 2.5; }
+#weaCol .wrot { will-change: transform; }
+#weaCol .wi.on .wrot { animation: weaSpin 10s linear infinite; }
+@keyframes weaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 /* Windprognose (aus claVis): zwei gleich aufgebaute Spalten links und rechts neben dem Instrument, ohne Rahmen */
 .pgc { position: fixed; top: 0; display: none; z-index: 2; font-family: var(--font-mono); pointer-events: none;
 text-shadow: 0 0 3px #000, 0 0 5px #000; }
@@ -252,6 +268,7 @@ font-family: var(--font-mono); pointer-events: none;
 
 <div class="pgc" id="pgL"></div><div class="pgc" id="pgR"></div><div id="pgT">WINDVORHERSAGE</div>
 
+<div id="weaCol"></div>
 <div class="instrument-wrap">
 <svg id="dial" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -344,7 +361,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v40</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v41</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -860,7 +877,7 @@ const setS = function (s) { if (Math.abs(s - curS) > 0.01) document.documentElem
 if (vsBox.style.display === 'none') { duBox.style.display = 'none'; setS(Math.max(0, pgDyReq)); return; }
 const wb = document.querySelector('.windbox').getBoundingClientRect();
 const hdrBottom = wb.bottom + LIFT; // so rechnen, als waere die Kopfzeile nicht angehoben
-const dsNow = parseFloat(document.documentElement.style.getPropertyValue('--ds')) || 1; // v40: Breite nicht mit dem verkleinerten Instrument schrumpfen lassen
+const dsNow = (parseFloat(document.documentElement.style.getPropertyValue('--ds')) || 1) * (parseFloat(document.documentElement.style.getPropertyValue('--wf')) || 1); // v40/v41: Breite nicht mit dem verkleinerten Instrument schrumpfen lassen
 const w = Math.floor(Math.min(window.innerWidth - 24, wr.width / dsNow)); // ganze Pixel: scharfe Kanten
 vsBox.style.width = w + 'px';
 vsBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
@@ -1148,7 +1165,8 @@ if (vsBox.style.display !== 'none') top = vsBox.getBoundingClientRect().bottom +
 const ok = pgProbe('oben', cols, top);
 return { ok: ok, titel: ok && pgTitelPasst(cols) };
 }
-function layoutProg() {
+function layoutProg() { weaGeom(); layoutProg0(); weaPlace(); }
+function layoutProg0() {
 if (alarmBox.classList.contains('open')) return; // v39: bei aufgeklappter Meldungsliste (liegt ueber dem Instrument) nichts neu berechnen
 duPlan();
 if (pgL.style.display === 'none') return;
@@ -1187,6 +1205,76 @@ if (ok) pgTitelZeigen(cols, pgTitelPasst(cols));
 }
 if (!ok) pgHide(); // kein Platz
 }
+
+// ---- v41: WEAs am Netz (Daten vom Script: weas = [[WEA-Nr, am Netz 0/1, defekt 0/1], ...]) ----
+const weaCol = document.getElementById('weaCol');
+const WEA_W = 54; // Breite der Spalte inkl. Rand
+let weaList = null, weaSig = '', weaZeigt = false, weaPitch = 0;
+function weaGeom() { // Instrument etwas kleiner und nach rechts, damit die Spalte links Platz hat
+const root = document.documentElement.style;
+const show = !!(weaList && weaList.length);
+const vm = Math.min(window.innerWidth, window.innerHeight);
+const base = Math.min(0.92 * vm, 720);
+const wf = show ? Math.max(0.8, Math.min(1, (window.innerWidth - WEA_W - 8) / base)) : 1;
+const wc = show ? WEA_W + 'px' : '0px';
+let ch = false;
+if (root.getPropertyValue('--wf') !== String(wf)) { root.setProperty('--wf', wf); ch = true; }
+if (root.getPropertyValue('--wcol') !== wc) { root.setProperty('--wcol', wc); ch = true; }
+return ch;
+}
+function weaBau(u) { // Symbole einmal bauen; danach werden nur Klassen geaendert (die Drehung wird nie unterbrochen)
+weaCol.innerHTML = '';
+u.forEach(function (it, i) {
+const d = document.createElement('div'); d.className = 'wi'; d.dataset.n = it[0];
+d.innerHTML = '<div class="wsym"><svg class="wtow" viewBox="-16 -13 32 35" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M0 2L0 20"/><circle r="2.4" fill="currentColor" stroke="none"/></svg>' +
+'<svg class="wrot" viewBox="-16 -16 32 32" fill="none" stroke-width="2.4" stroke-linecap="round" style="animation-delay:-' + (i * 1.7).toFixed(1) + 's"><path d="M0 0L0 -12"/><path d="M0 0L10.4 6"/><path d="M0 0L-10.4 6"/></svg></div>' +
+'<div class="wlab">WEA ' + it[0] + '</div>';
+weaCol.appendChild(d);
+});
+}
+function weaRender(list) {
+const show = Array.isArray(list) && list.length > 0;
+weaList = show ? list : null;
+const geomCh = weaGeom();
+if (!show) { weaCol.style.display = 'none'; weaZeigt = false; if (geomCh) { pgForce = true; layoutProg(); } return; }
+const sig = list.map(function (x) { return x[0]; }).join(',');
+if (sig !== weaSig) { weaBau(list); weaSig = sig; weaPitch = 0; }
+list.forEach(function (it, i) {
+const el = weaCol.children[i];
+const k = it[2] ? 'def' : (it[1] ? 'on' : 'off');
+const cls = 'wi ' + k;
+if (el.className !== cls) el.className = cls;
+});
+const neu = !weaZeigt;
+weaZeigt = true;
+if (neu || geomCh) { pgForce = true; layoutProg(); } else weaPlace();
+}
+function weaPlace() {
+if (!weaList || !weaList.length) return;
+const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
+let top = wr.top + wr.height * 0.04, bottom = wr.bottom - wr.height * 0.04;
+if (pgL.style.display !== 'none') { // Windvorhersage links: Spalte weicht aus (darunter bzw. darueber)
+const r = pgL.getBoundingClientRect();
+if (r.left < WEA_W) { if (r.top < wr.top + wr.height * 0.5) top = Math.max(top, r.bottom + 4); else bottom = Math.min(bottom, r.top - 4); }
+}
+if (alarmBox.style.display !== 'none') bottom = Math.min(bottom, alarmBox.getBoundingClientRect().top - 4);
+const n = weaList.length, avail = Math.max(0, bottom - top);
+const pitch = Math.max(30, Math.min(46, Math.floor(avail / n)));
+const t = top + Math.max(0, (avail - pitch * n) / 2);
+weaCol.style.top = Math.round(t) + 'px';
+if (pitch !== weaPitch) {
+weaPitch = pitch;
+const u = (pitch - 12) / 35; // Pixel je Zeichen-Einheit
+Array.prototype.forEach.call(weaCol.children, function (el) {
+const sym = el.querySelector('.wsym'); sym.style.width = Math.round(32 * u) + 'px'; sym.style.height = Math.round(35 * u) + 'px';
+const tw = el.querySelector('.wtow'), ro = el.querySelector('.wrot');
+tw.style.width = Math.round(32 * u) + 'px'; tw.style.height = Math.round(35 * u) + 'px'; tw.style.top = '0px';
+ro.style.width = Math.round(32 * u) + 'px'; ro.style.height = Math.round(32 * u) + 'px'; ro.style.top = Math.round(-3 * u) + 'px';
+el.style.height = pitch + 'px';
+});
+}
+weaCol.style.display = 'flex';
+}
 window.addEventListener('resize', layoutProg);
 setInterval(updateProg, 60000); // alte Zeitpunkte nachziehen
 
@@ -1197,7 +1285,7 @@ let kw = null;
 let liveYieldMwh = null;
 let liveWindMs = null;
 let serverDayMax = null, serverDayMaxTs = 0;
-let liveMeldungen = null, dataTs = 0;
+let liveMeldungen = null, dataTs = 0, weaDaten = null;
 if (endpoint) {
 try {
 const res = await fetch(endpoint, { cache: 'no-store' });
@@ -1218,6 +1306,7 @@ if (Array.isArray(data.meldungen)) liveMeldungen = data.meldungen;
 if (Array.isArray(data.prognose)) { pgData = data.prognose; pgTs = parseInt(data.prognose_ts, 10) || 0; updateProg(); }
 dataTs = parseInt(data.ts, 10) || 0;
 duLies(duMy, data);
+weaDaten = Array.isArray(data.weas) ? data.weas : null;
 if (data.tagesmax_kw !== undefined && data.tagesmax_kw !== null && data.tagesmax_tag === todayKey()) {
 const m = parseFloat(data.tagesmax_kw);
 if (!isNaN(m)) { serverDayMax = m; serverDayMaxTs = parseInt(data.tagesmax_ts, 10) || 0; }
@@ -1239,6 +1328,7 @@ const isLiveValue = kw !== null;
 const datenAlt = isLiveValue && dataTs > 0 && Date.now() - dataTs > NULL_NACH_MS;
 const frisch = isLiveValue && !datenAlt; // nur frische Daten gelten als aktueller Messwert
 renderMeldungen(isLiveValue ? liveMeldungen : null, dataTs);
+weaRender(frisch ? weaDaten : null);
 setStale(!isLiveValue || (dataTs > 0 && Date.now() - dataTs > 5 * 60 * 1000));
 vsMy.kw = isLiveValue ? kw : null; vsMy.ts = dataTs; if (!isLiveValue) duMy.g = NaN;
 holeAnderen(); updateVs();
