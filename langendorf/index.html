@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v42 (steht auch unten in der Anzeige) -->
+<!-- Version v43 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -145,6 +145,9 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 .alr.sum { background: rgba(8,16,22,0.72); border-left-color: transparent; justify-content: center; gap: 12px; padding: 7px 8px; cursor: pointer; pointer-events: auto; opacity: 1; }
 .alr.sum .sc { display: inline-flex; align-items: center; gap: 5px; color: #fff; white-space: nowrap; }
 .alr.sum .sc i { display: block; width: 7px; height: 7px; border-radius: 50%; background: #ff4a3a; }
+.alr.info { background: rgba(20,55,110,0.6); border-left-color: #4a90e2; color: #e3efff; }
+.alr.info .adot { background: #4a90e2; }
+.alr.sum .sc.i i { background: #4a90e2; }
 .alr.sum .sc.w i { background: #ffb02e; } .alr.sum .sc.s i { background: #4fd6cf; }
 .alr.sum .sa { opacity: 0.75; }
 .alr.nul { cursor: default; pointer-events: none; }
@@ -379,7 +382,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v42</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v43</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -699,19 +702,19 @@ alarmBox.style.display = 'flex'; return;
 }
 // v39: Anzeige nach Anlage (WEA-Nummer) sortiert; Sammelzeilen ("Park", "4 Anlagen") zuerst; je Anlage Alarm vor Stopp vor Warnung.
 // Eingeklappt bleiben die wichtigsten Meldungen sichtbar (Alarme zuerst), nur in der Reihenfolge nach WEA.
-const RANG = { alarm: 0, stopp: 1 };
+const RANG = { alarm: 0, stopp: 1, warn: 2, info: 3 };
 const rk = a => (RANG[a.typ] !== undefined ? RANG[a.typ] : 2);
 const wn = a => { const v = parseInt(a.wea, 10); return (a.wea === '' || a.wea === undefined || a.wea === null) ? -1 : (isNaN(v) ? 999 : v); };
 const nachWea = (a, b) => (wn(a) - wn(b)) || (rk(a) - rk(b));
 const nachWichtig = (a, b) => (rk(a) - rk(b)) || (wn(a) - wn(b));
 const sorted = list.slice().sort(nachWea);
 const rows = alarmOpen ? sorted : []; // v42: eingeklappt keine einzelnen Zeilen, nur die Zusammenfassung
-const nA = sorted.filter(a => a.typ === 'alarm').length, nS = sorted.filter(a => a.typ === 'stopp').length, nW = sorted.length - nA - nS;
-const sig = JSON.stringify(rows) + '|' + nA + '/' + nS + '/' + nW + '|' + alarmOpen;
+const nA = sorted.filter(a => a.typ === 'alarm').length, nS = sorted.filter(a => a.typ === 'stopp').length, nI = sorted.filter(a => a.typ === 'info').length, nW = sorted.length - nA - nS - nI;
+const sig = JSON.stringify(rows) + '|' + nA + '/' + nS + '/' + nW + '/' + nI + '|' + alarmOpen;
 if (alarmBox.dataset.sig !== sig) {
 alarmBox.textContent = '';
 rows.forEach(a => {
-const d = document.createElement('div'); d.className = 'alr' + (a.typ === 'alarm' ? '' : (a.typ === 'stopp' ? ' stop' : ' warn'));
+const d = document.createElement('div'); d.className = 'alr' + (a.typ === 'alarm' ? '' : (a.typ === 'stopp' ? ' stop' : (a.typ === 'info' ? ' info' : ' warn')));
 const dot = document.createElement('span'); dot.className = 'adot';
 const w = document.createElement('b'); w.textContent = a.label ? String(a.label) : 'WEA ' + a.wea;
 const m = document.createElement('span'); m.className = 'amsg'; m.textContent = schoen(String(a.text || ''));
@@ -726,7 +729,7 @@ alarmBox.append(mo);
 } else {
 const su = document.createElement('div'); su.className = 'alr sum';
 const teil = (n, kl, wort1, wortN) => n ? '<span class="sc ' + kl + '"><i></i>' + n + ' ' + (n === 1 ? wort1 : wortN) + '</span>' : '';
-su.innerHTML = teil(nA, '', 'Alarm', 'Alarme') + teil(nW, 'w', 'Warnung', 'Warnungen') + teil(nS, 's', 'Stopp', 'Stopps') + '<span class="sa">\u25B4</span>';
+su.innerHTML = teil(nA, '', 'Alarm', 'Alarme') + teil(nW, 'w', 'Warnung', 'Warnungen') + teil(nS, 's', 'Stopp', 'Stopps') + teil(nI, 'i', 'Info', 'Infos') + '<span class="sa">\u25B4</span>';
 su.onclick = () => { setAlarmOpen(true); renderMeldungen(list, ts); };
 alarmBox.append(su);
 }
