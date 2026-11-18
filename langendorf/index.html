@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v41 (steht auch unten in der Anzeige) -->
+<!-- Version v42 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -141,6 +141,16 @@ border-left: 3px solid #ff4a3a; border-radius: 2px; white-space: nowrap; overflo
 .alr.stop { background: rgba(20,90,95,0.6); border-left-color: #4fd6cf; color: #e6fffd; } /* v35: externer Stopp (Code 58), tuerkis */
 .alr.stop .adot { background: #4fd6cf; }
 #alarmBox, .alr, .alr b, .alr .amsg { -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; text-shadow: none; filter: none; } /* v35: scharfe Schrift */
+/* v42: eingeklappt nur EINE Zeile (Anzahl je Art) zum Aufklappen; ohne Meldungen unsichtbare Platzhalter-Zeile, damit beide Parks gleich viel Platz reservieren */
+.alr.sum { background: rgba(8,16,22,0.72); border-left-color: transparent; justify-content: center; gap: 12px; padding: 7px 8px; cursor: pointer; pointer-events: auto; opacity: 1; }
+.alr.sum .sc { display: inline-flex; align-items: center; gap: 5px; color: #fff; white-space: nowrap; }
+.alr.sum .sc i { display: block; width: 7px; height: 7px; border-radius: 50%; background: #ff4a3a; }
+.alr.sum .sc.w i { background: #ffb02e; } .alr.sum .sc.s i { background: #4fd6cf; }
+.alr.sum .sa { opacity: 0.75; }
+.alr.nul { cursor: default; pointer-events: none; }
+.alr.nul .sc { opacity: 0.6; font-weight: 400; }
+.alr.nul .sc i { background: #3ddc84; }
+.alr.leer { visibility: hidden; pointer-events: none; }
 .alr.more { background: none; border-left-color: transparent; justify-content: center; opacity: 0.8; padding: 6px 0 2px; pointer-events: auto; cursor: pointer; }
 #alarmBox.open { z-index: 50; background: rgba(4,12,16,0.92); padding: 6px; border-radius: 4px; pointer-events: auto; left: 8px; right: 8px; }
 #alarmBox.open .alr.more { opacity: 1; }
@@ -195,9 +205,9 @@ position: fixed; left: 0; top: 0; display: none; z-index: 2;
 background: #0a0807; border: 0.5px solid #2a1d14; border-radius: 8px; padding: 7px 12px 8px;
 font-family: var(--font-mono); pointer-events: none;
 }
-.vti { font-size: 11px; letter-spacing: 0.14em; color: #c9a47a; line-height: 1; text-align: center; margin-bottom: 6px; white-space: nowrap; }
+.vti { font-size: 11px; letter-spacing: 0.14em; color: #c9a47a; line-height: 1; text-align: center; margin-bottom: 4px; white-space: nowrap; }
 .vrow { display: flex; align-items: center; gap: 8px; height: 13px; }
-.vrow + .vrow { margin-top: 5px; }
+.vrow + .vrow { margin-top: 3px; }
 .vlbl { font-size: 11px; letter-spacing: 0.1em; color: #c9a47a; width: 82px; flex: none; line-height: 1; white-space: nowrap; }
 .vseg { display: flex; gap: 2px; height: 10px; flex: none; }
 .vseg i { display: block; flex: none; width: 5px; border-radius: 0; background: #2a1d14; }
@@ -206,6 +216,7 @@ font-family: var(--font-mono); pointer-events: none;
 .vpc { width: 34px; flex: none; text-align: right; font-size: 13px; font-weight: 500; line-height: 13px; white-space: nowrap; }
 .vpc.on { color: #ffa23f; text-shadow: 0 0 4px rgba(255,122,26,0.7); }
 .vpc.dm { color: #a8662c; }
+#vsBox { padding: 5px 10px 6px; } /* v42: Auslastung ca. 20 % niedriger */
 #vsBox.tight { padding: 5px 10px 6px; }
 #vsBox.tight .vti { margin-bottom: 4px; }
 #vsBox.tight .vrow + .vrow { margin-top: 3px; }
@@ -258,7 +269,7 @@ font-family: var(--font-mono); pointer-events: none;
 </svg>
 </div>
 
-<div id="duBox"><div class="dti"></div><svg class="dsv" height="36"></svg></div>
+<div id="duBox"><div class="dti"></div><svg class="dsv" height="48"></svg></div>
 
 <div id="vsBox">
 <div class="vti">AUSLASTUNG WINDPARKS</div>
@@ -368,7 +379,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v41</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v42</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -673,7 +684,19 @@ let alarmOpen = false;
 function setAlarmOpen(v) { alarmOpen = v; }
 function renderMeldungen(list, ts) {
 window.__lastMel = { list, ts };
-if (!Array.isArray(list) || list.length === 0) { alarmBox.textContent = ''; alarmBox.dataset.sig = ''; alarmBox.style.display = 'none'; return; }
+if (!Array.isArray(list) || list.length === 0) { // v42: immer eine Zeile (gleiche Hoehe in beiden Parks): "keine aktiven Meldungen"; ohne Daten (null) unsichtbarer Platzhalter
+alarmOpen = false;
+const leerSig = Array.isArray(list) ? 'leer' : 'keine-daten';
+if (alarmBox.dataset.sig !== leerSig) {
+alarmBox.textContent = ''; alarmBox.classList.remove('open');
+const p = document.createElement('div'); p.className = 'alr sum nul' + (Array.isArray(list) ? '' : ' leer');
+p.innerHTML = '<span class="sc"><i></i>keine aktiven Meldungen</span>'; alarmBox.append(p);
+alarmBox.dataset.sig = leerSig;
+alarmBox.style.display = 'flex'; alarmBox.style.opacity = '1';
+pgForce = true; layoutProg();
+}
+alarmBox.style.display = 'flex'; return;
+}
 // v39: Anzeige nach Anlage (WEA-Nummer) sortiert; Sammelzeilen ("Park", "4 Anlagen") zuerst; je Anlage Alarm vor Stopp vor Warnung.
 // Eingeklappt bleiben die wichtigsten Meldungen sichtbar (Alarme zuerst), nur in der Reihenfolge nach WEA.
 const RANG = { alarm: 0, stopp: 1 };
@@ -682,10 +705,9 @@ const wn = a => { const v = parseInt(a.wea, 10); return (a.wea === '' || a.wea =
 const nachWea = (a, b) => (wn(a) - wn(b)) || (rk(a) - rk(b));
 const nachWichtig = (a, b) => (rk(a) - rk(b)) || (wn(a) - wn(b));
 const sorted = list.slice().sort(nachWea);
-const MAXROWS = 4;
-if (sorted.length <= MAXROWS) alarmOpen = false;
-const rows = (sorted.length > MAXROWS && !alarmOpen) ? sorted.slice().sort(nachWichtig).slice(0, MAXROWS - 1).sort(nachWea) : sorted;
-const sig = JSON.stringify(rows) + sorted.length + alarmOpen;
+const rows = alarmOpen ? sorted : []; // v42: eingeklappt keine einzelnen Zeilen, nur die Zusammenfassung
+const nA = sorted.filter(a => a.typ === 'alarm').length, nS = sorted.filter(a => a.typ === 'stopp').length, nW = sorted.length - nA - nS;
+const sig = JSON.stringify(rows) + '|' + nA + '/' + nS + '/' + nW + '|' + alarmOpen;
 if (alarmBox.dataset.sig !== sig) {
 alarmBox.textContent = '';
 rows.forEach(a => {
@@ -696,14 +718,21 @@ const m = document.createElement('span'); m.className = 'amsg'; m.textContent = 
 d.append(dot, w, m);
 alarmBox.append(d);
 });
-if (sorted.length > MAXROWS) {
+if (alarmOpen) {
 const mo = document.createElement('div'); mo.className = 'alr more';
-mo.textContent = alarmOpen ? 'weniger anzeigen \u25BE' : '+ ' + (sorted.length - rows.length) + ' weitere Meldungen \u25B4';
-mo.onclick = () => { setAlarmOpen(!alarmOpen); renderMeldungen(list, ts); };
+mo.textContent = 'weniger anzeigen \u25BE';
+mo.onclick = () => { setAlarmOpen(false); renderMeldungen(list, ts); pgForce = true; layoutProg(); };
 alarmBox.append(mo);
+} else {
+const su = document.createElement('div'); su.className = 'alr sum';
+const teil = (n, kl, wort1, wortN) => n ? '<span class="sc ' + kl + '"><i></i>' + n + ' ' + (n === 1 ? wort1 : wortN) + '</span>' : '';
+su.innerHTML = teil(nA, '', 'Alarm', 'Alarme') + teil(nW, 'w', 'Warnung', 'Warnungen') + teil(nS, 's', 'Stopp', 'Stopps') + '<span class="sa">\u25B4</span>';
+su.onclick = () => { setAlarmOpen(true); renderMeldungen(list, ts); };
+alarmBox.append(su);
 }
 alarmBox.classList.toggle('open', alarmOpen);
 alarmBox.dataset.sig = sig;
+if (!alarmOpen) { pgForce = true; layoutProg(); }
 }
 alarmBox.style.display = 'flex';
 alarmBox.style.opacity = (ts && Date.now() - ts > 10 * 60 * 1000) ? '0.45' : '1'; // veraltete Daten blasser
@@ -1002,16 +1031,16 @@ const inner = w - 18; // Rahmen 2 + Innenabstand 16
 const kurz = inner < 330;
 const lw = kurz ? 92 : 124; // Breite der Werte rechts
 const x0 = 3, x1 = inner - lw - 6, pw = x1 - x0;
-const y0 = 3, y1 = 25; // Zeichenflaeche (22 px hoch), darunter die Uhrzeiten
+const y0 = 3, y1 = 37; // v42: Zeichenflaeche 34 px hoch (vorher 22), darunter die Uhrzeiten
 const ymax = Math.max(0.5, Math.max(I.rv, I.lv) * 1.15);
 const X = function (m) { return Math.round(x0 + pw * Math.min(1440, m) / 1440) + 0.5; };
 const Y = function (h) { return Math.round((y1 - (y1 - y0) * h / ymax) * 2) / 2; };
-svg.setAttribute('width', inner); svg.setAttribute('viewBox', '0 0 ' + inner + ' 36');
+svg.setAttribute('width', inner); svg.setAttribute('viewBox', '0 0 ' + inner + ' 48');
 let h = '';
 [0, 6, 12, 18, 24].forEach(function (hh) {
 const x = X(hh * 60);
 h += '<line x1="' + x + '" y1="' + y0 + '" x2="' + x + '" y2="' + (y1 + 3) + '" stroke="' + (hh % 24 ? '#243044' : '#4a5568') + '" stroke-width="1" shape-rendering="crispEdges"/>';
-h += '<text x="' + x + '" y="35" text-anchor="' + (hh === 0 ? 'start' : (hh === 24 ? 'end' : 'middle')) + '" font-size="8.5" fill="#8a97a8">' + (hh < 10 ? '0' : '') + hh + '</text>';
+h += '<text x="' + x + '" y="47" text-anchor="' + (hh === 0 ? 'start' : (hh === 24 ? 'end' : 'middle')) + '" font-size="8.5" fill="#8a97a8">' + (hh < 10 ? '0' : '') + hh + '</text>';
 });
 h += '<line x1="' + x0 + '" y1="' + (y1 + 0.5) + '" x2="' + x1 + '" y2="' + (y1 + 0.5) + '" stroke="#4a5568" stroke-width="1" shape-rendering="crispEdges"/>';
 const farbe = { roge: '#e8a23a', langendorf: '#58b4e8' };
