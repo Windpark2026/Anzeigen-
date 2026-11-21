@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v45 (steht auch unten in der Anzeige) -->
+<!-- Version v46 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -200,6 +200,9 @@ color: #9dffc0; text-align: center; text-shadow: 0 0 3px #000, 0 0 5px #000; whi
 .pgc .pv { width: 28px; flex: none; font-size: 13px; color: #5dff95; text-align: center; }
 /* aktueller Wert: ganze Zeile in #D23AE7, ohne Schattenglow (scharf) */
 .pgc.w4 .pv { width: 36px; } .pgc.w4.s2 .pv, .pgc.w4.s3 .pv { width: 32px; } .pgc.w4.s4 .pv { width: 30px; } /* v44: zweistellige Windwerte ("12,3"): rechte Spalte waechst nach links, linke nach rechts; Abstand zum Ring wird weiter geprueft */
+.pgc .pd { width: 12px; flex: none; display: flex; align-items: center; justify-content: center; color: #7fe0a4; }
+.pgc .pd svg { width: 10px; height: 10px; display: block; }
+.pgc.s4 .pd { width: 10px; } .pgc.s4 .pd svg { width: 9px; height: 9px; }
 .pgc .pr.first { text-shadow: none; }
 .pgc .pr.first span { color: #D23AE7; font-weight: 700; -webkit-font-smoothing: antialiased; }
 
@@ -376,7 +379,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v45</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v46</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1103,15 +1106,21 @@ const PG_WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 let pgData = null, pgTs = 0, pgW4 = false; // v44: pgW4 = ein Wert >= 10 m/s (vierstellig, z. B. "12,3"): Wertespalte etwas breiter
 function pgSlotMs(it) { const t = new Date(it.d + 'T' + it.z + ':00').getTime(); return isNaN(t) ? 0 : t; }
 function pgHide() { pgL.style.display = 'none'; pgR.style.display = 'none'; pgT.style.display = 'none'; }
+// v46 (Vorschau): Windrichtung als kleiner Pfeil. r = Grad, WOHER der Wind kommt (0 = Nord, 90 = Ost). Die Pfeilspitze zeigt dorthin,
+// woher der Wind kommt, wie die Gondel/der Rotor, der in den Wind schaut.
+function pgPfeil(r) {
+if (typeof r !== 'number' || isNaN(r)) return '';
+return '<svg viewBox="0 0 10 10" style="transform:rotate(' + Math.round(r) + 'deg)"><path d="M5 9.2V1.6M2.3 4.2L5 1.4L7.7 4.2" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
 function pgColumn(items, first, mitKopf) {
 const mx = 4.5;
-let html = '<div class="pr pt"><span class="pw">So</span><span class="pz">ZEIT</span><span class="pc">&middot;</span><span class="pv">m/s</span></div>';
+let html = '<div class="pr pt"><span class="pw">So</span><span class="pz">ZEIT</span><span class="pc">&middot;</span><span class="pv">m/s</span><span class="pd"></span></div>';
 items.forEach(function (it, i) {
 const k = Math.max(0, Math.min(1, it.ms / mx));
 const wt = PG_WT[new Date(it.d + 'T12:00:00').getDay()];
 html += '<div class="pr' + (first && i === 0 ? ' first' : '') + '"><span class="pw">' + wt + '</span><span class="pz">' + it.z + '</span>' +
 '<span class="pc">:</span>' +
-'<span class="pv">' + it.ms.toFixed(1).replace('.', ',') + '</span></div>';
+'<span class="pv">' + it.ms.toFixed(1).replace('.', ',') + '</span><span class="pd">' + pgPfeil(it.r) + '</span></div>';
 });
 return html;
 }
@@ -1212,13 +1221,13 @@ let v = pgVersuch(cols);
 if (!pgForce && v.ok && v.titel) { pgTitelZeigen(cols, true); return; }
 pgForce = false;
 // 1. Suche: Instrument zuerst nach unten schieben (Groesse bleibt), dann stufenweise etwas verkleinern.
-let stufen = [1, 0.96, 0.92, 0.88].filter(function (x) { return x <= duDs + 0.001; });
+let stufen = (window.innerWidth >= 500 ? [0.96, 0.92, 0.88] : [1, 0.96, 0.92, 0.88]).filter(function (x) { return x <= duDs + 0.001; });
 if (!stufen.length) stufen = [duDs];
 let ok = false, merk = null;
 for (let i = 0; i < stufen.length && !ok; i++) {
 pgSetDs(stufen[i]); pgSetDy(0);
 const mx = pgDyMax();
-const dyStart = Math.floor(Math.min(0, duBedarf)); // v37: Instrument darf auch nach oben ruecken (mehr Platz unten)
+const dyStart = Math.max(Math.floor(Math.min(0, duBedarf)), window.innerWidth < 500 ? Math.min(mx, 16) : -9999); // v46: iPhone Instrument etwas tiefer // v37: Instrument darf auch nach oben ruecken (mehr Platz unten)
 for (let dy = dyStart; dy <= mx + 7 && !ok; dy += 8) {
 const d = Math.min(dy, mx);
 pgSetDy(d);
@@ -1465,7 +1474,8 @@ function setWindText(text) {
 const svg = document.getElementById('windDotsSvg');
 const g = document.getElementById('windDots');
 if (!g || !svg) return;
-const opts = { dot: 1.3, pitch: 2.45, colGap: 1.3, color: '#8dffe8' };
+const opts = { dot: 1.15, pitch: 2.15, colGap: 1.3, color: '#8dffe8' };
+if (/^\d,/.test(text)) text = ' ' + text; // v46: Platz fuer die Zehnerstelle reservieren
 const tmp = document.createElementNS(NS, 'g');
 const totalW = renderDotText(tmp, text, opts);
 const totalH = 6 * opts.pitch;
