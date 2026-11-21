@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v46 (steht auch unten in der Anzeige) -->
+<!-- Version v47 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -203,7 +203,8 @@ color: #9dffc0; text-align: center; text-shadow: 0 0 3px #000, 0 0 5px #000; whi
 .pgc .pd { width: 12px; flex: none; display: flex; align-items: center; justify-content: center; color: #7fe0a4; }
 .pgc .pd svg { width: 10px; height: 10px; display: block; }
 .pgc.s4 .pd { width: 10px; } .pgc.s4 .pd svg { width: 9px; height: 9px; }
-.pgc .pr.first { text-shadow: none; }
+.pgc .pr.first { text-shadow: none; position: relative; }
+.pgc .pn { position: absolute; left: 100%; top: 0; margin-left: 6px; white-space: nowrap; font-size: 12px; letter-spacing: 0; } /* v47: Windrichtung in Worten rechts neben der ersten Zeile */
 .pgc .pr.first span { color: #D23AE7; font-weight: 700; -webkit-font-smoothing: antialiased; }
 
 /* Vergleich Langendorf gegen Roge (Leuchtbalken, Nixie-Stil) zwischen Kopfzeile und Zifferblatt */
@@ -379,7 +380,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v46</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v47</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1120,7 +1121,8 @@ const k = Math.max(0, Math.min(1, it.ms / mx));
 const wt = PG_WT[new Date(it.d + 'T12:00:00').getDay()];
 html += '<div class="pr' + (first && i === 0 ? ' first' : '') + '"><span class="pw">' + wt + '</span><span class="pz">' + it.z + '</span>' +
 '<span class="pc">:</span>' +
-'<span class="pv">' + it.ms.toFixed(1).replace('.', ',') + '</span><span class="pd">' + pgPfeil(it.r) + '</span></div>';
+'<span class="pv">' + it.ms.toFixed(1).replace('.', ',') + '</span><span class="pd">' + pgPfeil(it.r) + '</span>' +
+(first && i === 0 && typeof it.rt === 'string' && it.rt ? '<span class="pn">aus ' + it.rt.replace(/[<>&]/g, '') + '</span>' : '') + '</div>';
 });
 return html;
 }
@@ -1210,7 +1212,24 @@ if (vsBox.style.display !== 'none') top = vsBox.getBoundingClientRect().bottom +
 const ok = pgProbe('oben', cols, top);
 return { ok: ok, titel: ok && pgTitelPasst(cols) };
 }
-function layoutProg() { weaGeom(); layoutProg0(); weaPlace(); }
+// v47: Windrichtung in Worten ("aus Ost-Suedost") rechts neben der ersten Zeile: Schrift verkleinern, bis sie den Ring nicht beruehrt (Abstand mind. 4 px) und nicht in die rechte Spalte ragt; sonst weglassen
+function pnFit() {
+const el = pgL.querySelector('.pn');
+if (!el || pgL.style.display === 'none') return;
+const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
+const cx = wr.left + wr.width / 2, cy = wr.top + wr.height / 2, R = wr.width * 196 / 400;
+const rmax = pgR.style.display === 'none' ? window.innerWidth - 6 : pgR.getBoundingClientRect().left - 6;
+el.style.display = '';
+const sizes = [12, 11, 10, 9, 8];
+for (let i = 0; i < sizes.length; i++) {
+el.style.fontSize = sizes[i] + 'px';
+const r = el.getBoundingClientRect();
+const nx = Math.max(r.left, Math.min(cx, r.right)), ny = Math.max(r.top, Math.min(cy, r.bottom));
+if (Math.hypot(nx - cx, ny - cy) >= R + 4 && r.right <= rmax) return;
+}
+el.style.display = 'none';
+}
+function layoutProg() { weaGeom(); layoutProg0(); weaPlace(); pnFit(); }
 function layoutProg0() {
 if (alarmBox.classList.contains('open')) return; // v39: bei aufgeklappter Meldungsliste (liegt ueber dem Instrument) nichts neu berechnen
 duPlan();
