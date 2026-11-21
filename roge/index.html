@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v47 (steht auch unten in der Anzeige) -->
+<!-- Version v48 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -204,7 +204,7 @@ color: #9dffc0; text-align: center; text-shadow: 0 0 3px #000, 0 0 5px #000; whi
 .pgc .pd svg { width: 10px; height: 10px; display: block; }
 .pgc.s4 .pd { width: 10px; } .pgc.s4 .pd svg { width: 9px; height: 9px; }
 .pgc .pr.first { text-shadow: none; position: relative; }
-.pgc .pn { position: absolute; left: 100%; top: 0; margin-left: 6px; white-space: nowrap; font-size: 12px; letter-spacing: 0; } /* v47: Windrichtung in Worten rechts neben der ersten Zeile */
+.pgc .pn { position: absolute; left: 100%; top: 0; height: 100%; display: flex; align-items: center; margin-left: 6px; white-space: nowrap; font-size: 10px; line-height: 1; letter-spacing: 0; } /* v47: Windrichtung in Worten rechts neben der ersten Zeile */
 .pgc .pr.first span { color: #D23AE7; font-weight: 700; -webkit-font-smoothing: antialiased; }
 
 /* Vergleich Langendorf gegen Roge (Leuchtbalken, Nixie-Stil) zwischen Kopfzeile und Zifferblatt */
@@ -380,7 +380,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v47</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v48</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1113,6 +1113,11 @@ function pgPfeil(r) {
 if (typeof r !== 'number' || isNaN(r)) return '';
 return '<svg viewBox="0 0 10 10" style="transform:rotate(' + Math.round(r) + 'deg)"><path d="M5 9.2V1.6M2.3 4.2L5 1.4L7.7 4.2" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
+function pgRichtungDe(t) { // claVis liefert teils Englisch ("West-Northwest"): auf Deutsch umstellen, damit der Text kurz bleibt
+t = String(t).replace(/[<>&]/g, '');
+const w = function (de) { return function (m, off, str) { return off > 0 && /[a-zA-Z]/.test(str.charAt(off - 1)) ? de.toLowerCase() : de; }; };
+return t.replace(/north/gi, w('Nord')).replace(/south/gi, w('Süd')).replace(/east/gi, w('Ost'));
+}
 function pgColumn(items, first, mitKopf) {
 const mx = 4.5;
 let html = '<div class="pr pt"><span class="pw">So</span><span class="pz">ZEIT</span><span class="pc">&middot;</span><span class="pv">m/s</span><span class="pd"></span></div>';
@@ -1122,7 +1127,7 @@ const wt = PG_WT[new Date(it.d + 'T12:00:00').getDay()];
 html += '<div class="pr' + (first && i === 0 ? ' first' : '') + '"><span class="pw">' + wt + '</span><span class="pz">' + it.z + '</span>' +
 '<span class="pc">:</span>' +
 '<span class="pv">' + it.ms.toFixed(1).replace('.', ',') + '</span><span class="pd">' + pgPfeil(it.r) + '</span>' +
-(first && i === 0 && typeof it.rt === 'string' && it.rt ? '<span class="pn">aus ' + it.rt.replace(/[<>&]/g, '') + '</span>' : '') + '</div>';
+(first && i === 0 && typeof it.rt === 'string' && it.rt ? '<span class="pn">aus ' + pgRichtungDe(it.rt) + '</span>' : '') + '</div>';
 });
 return html;
 }
@@ -1219,8 +1224,8 @@ if (!el || pgL.style.display === 'none') return;
 const wr = document.querySelector('.instrument-wrap').getBoundingClientRect();
 const cx = wr.left + wr.width / 2, cy = wr.top + wr.height / 2, R = wr.width * 196 / 400;
 const rmax = pgR.style.display === 'none' ? window.innerWidth - 6 : pgR.getBoundingClientRect().left - 6;
-el.style.display = '';
-const sizes = [12, 11, 10, 9, 8];
+el.style.display = 'flex';
+const sizes = [10, 9, 8];
 for (let i = 0; i < sizes.length; i++) {
 el.style.fontSize = sizes[i] + 'px';
 const r = el.getBoundingClientRect();
