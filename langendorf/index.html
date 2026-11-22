@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v50 (steht auch unten in der Anzeige) -->
+<!-- Version v51 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -173,6 +173,11 @@ transform: translate(max(0px, calc(var(--wcol, 0px) + (min(92vmin, 720px) * var(
 #weaCol .wi.on .wrot, #weaCol .wi.on .wtow { stroke: #3ddc84; }
 #weaCol .wi.def .wrot, #weaCol .wi.def .wtow { stroke: #3a444c; stroke-dasharray: 2.5 2.5; }
 #weaCol .wrot { will-change: transform; }
+/* v51: Antippen einer WEA am Netz zeigt kurz Name und Ist-Leistung (Sprechblase) */
+#weaCol .wi.on { pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#weaTip { position: fixed; z-index: 6; display: none; transform: translateY(-50%); white-space: nowrap; font-family: var(--font-mono); font-size: 12px; line-height: 1; padding: 6px 9px; border-radius: 6px; background: rgba(8, 14, 18, 0.94); border: 1px solid #3ddc84; color: #bfeccf; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); pointer-events: none; }
+#weaTip::before { content: ''; position: absolute; left: -5px; top: 50%; width: 8px; height: 8px; margin-top: -4px; background: rgba(8, 14, 18, 0.94); border-left: 1px solid #3ddc84; border-bottom: 1px solid #3ddc84; transform: rotate(45deg); }
+#weaTip b { color: #3ddc84; font-weight: 700; margin-left: 6px; }
 #weaCol .wi.on .wrot { animation: weaSpin 10s linear infinite; }
 @keyframes weaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -288,6 +293,7 @@ font-family: var(--font-mono); pointer-events: none;
 <div class="pgc" id="pgL"></div><div class="pgc" id="pgR"></div><div id="pgT">WINDVORHERSAGE</div>
 
 <div id="weaCol"></div>
+<div id="weaTip"></div>
 <div class="instrument-wrap">
 <svg id="dial" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -387,7 +393,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v50</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v51</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1301,6 +1307,33 @@ if (root.getPropertyValue('--wf') !== String(wf)) { root.setProperty('--wf', wf)
 if (root.getPropertyValue('--wcol') !== wc) { root.setProperty('--wcol', wc); ch = true; }
 return ch;
 }
+// v51: Sprechblase "WEA 03 1.234 kW" fuer 4 Sekunden; nur fuer Anlagen am Netz (grau/defekt nicht antippbar)
+const weaTip = document.getElementById('weaTip');
+let weaTipN = null, weaTipTimer = null;
+function weaTipText() {
+const it = (weaList || []).filter(function (x) { return String(x[0]) === weaTipN; })[0];
+if (!it || !it[1] || it[2]) return null;
+const kw = (typeof it[3] === 'number' && !isNaN(it[3])) ? Math.round(it[3]).toLocaleString('de-DE') + ' kW' : '–';
+return 'WEA ' + it[0] + '<b>' + kw + '</b>';
+}
+function weaTipHide() { weaTipN = null; weaTip.style.display = 'none'; if (weaTipTimer) { clearTimeout(weaTipTimer); weaTipTimer = null; } }
+function weaTipShow(el) {
+weaTipN = el.dataset.n;
+const html = weaTipText();
+if (!html) { weaTipHide(); return; }
+weaTip.innerHTML = html;
+const r = el.getBoundingClientRect(), c = weaCol.getBoundingClientRect();
+weaTip.style.left = Math.round(c.right + 2) + 'px';
+weaTip.style.top = Math.round(r.top + r.height / 2) + 'px';
+weaTip.style.display = 'block';
+if (weaTipTimer) clearTimeout(weaTipTimer);
+weaTipTimer = setTimeout(weaTipHide, 4000);
+}
+weaCol.addEventListener('click', function (e) {
+const el = e.target.closest ? e.target.closest('.wi') : null;
+if (!el || !el.classList.contains('on')) return;
+if (weaTipN === el.dataset.n && weaTip.style.display === 'block') weaTipHide(); else weaTipShow(el);
+});
 function weaBau(u) { // Symbole einmal bauen; danach werden nur Klassen geaendert (die Drehung wird nie unterbrochen)
 weaCol.innerHTML = '';
 u.forEach(function (it, i) {
@@ -1315,7 +1348,7 @@ function weaRender(list) {
 const show = Array.isArray(list) && list.length > 0;
 weaList = show ? list : null;
 const geomCh = weaGeom();
-if (!show) { weaCol.style.display = 'none'; weaZeigt = false; if (geomCh) { pgForce = true; layoutProg(); } return; }
+if (!show) { weaTipHide(); weaCol.style.display = 'none'; weaZeigt = false; if (geomCh) { pgForce = true; layoutProg(); } return; }
 const sig = list.map(function (x) { return x[0]; }).join(',');
 if (sig !== weaSig) { weaBau(list); weaSig = sig; weaPitch = 0; }
 list.forEach(function (it, i) {
@@ -1324,6 +1357,7 @@ const k = it[2] ? 'def' : (it[1] ? 'on' : 'off');
 const cls = 'wi ' + k;
 if (el.className !== cls) el.className = cls;
 });
+if (weaTipN !== null) { const th = weaTipText(); if (th) weaTip.innerHTML = th; else weaTipHide(); } // v51: offene Sprechblase live aktualisieren
 const neu = !weaZeigt;
 weaZeigt = true;
 if (neu || geomCh) { pgForce = true; layoutProg(); } else weaPlace();
