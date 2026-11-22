@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- ROGE - 8 x ENERCON E70-1,8 - Seite: roge/index.html -->
-<!-- Version v49 (steht auch unten in der Anzeige) -->
+<!-- Version v50 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -380,7 +380,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6aa7ee" stroke="#0a0907" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v49</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#f0e6d2" opacity="0.5">v50</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1100,7 +1100,7 @@ window.addEventListener('resize', layoutVs);
 
 // ---- Windprognose von claVis (Feld "prognose": Liste mit d = Datum, z = Uhrzeit, ms = Wind in m/s) ----
 // Links die ersten 4, rechts die naechsten 4 Zeitpunkte, beide Spalten gleich aufgebaut: Wochentag, Zeit, Balken, Wert.
-const PG_MAX_ALTER_MS = 6 * 3600 * 1000; // Prognose aelter als 6 h: ausblenden
+const PG_MAX_ALTER_MS = 3 * 3600 * 1000; // v50: Prognose aelter als 3 h: ausblenden (vorher 6 h; so bleibt nie ein einzelner Wert uebrig)
 const PG_VERGANGEN_MS = 90 * 60 * 1000; // Zeitpunkte, die schon laenger her sind, weglassen
 const pgL = document.getElementById('pgL'), pgR = document.getElementById('pgR'), pgT = document.getElementById('pgT');
 const PG_WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
