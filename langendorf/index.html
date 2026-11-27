@@ -1,6 +1,6 @@
 <!-- ================================================================== -->
 <!-- LANGENDORF - 8 x GE-1,5sl - Seite: langendorf/index.html -->
-<!-- Version v51 (steht auch unten in der Anzeige) -->
+<!-- Version v52 (steht auch unten in der Anzeige) -->
 <!-- ================================================================== -->
 <!DOCTYPE html>
 <html lang="de">
@@ -393,7 +393,7 @@ font-family: var(--font-mono); pointer-events: none;
 <!-- Tagesspitze: Dreieck am Rand -->
 <g id="maxTriG" opacity="0"><polygon points="200,32 205.5,18 194.5,18" fill="#6fe3d0" stroke="#0a1420" stroke-width="0.8" stroke-linejoin="round"/></g>
 
-<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v51</text>
+<text id="verSvg" x="200" y="365" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" letter-spacing="1" fill="#e8f2f0" opacity="0.5">v52</text>
 
 <!-- glass reflection on top -->
 <ellipse cx="150" cy="140" rx="150" ry="90" fill="url(#glassGrad)" clip-path="url(#faceClip)" transform="rotate(-18 150 140)"/>
@@ -1148,6 +1148,9 @@ html += '<div class="pr' + (first && i === 0 ? ' first' : '') + '"><span class="
 return html;
 }
 function updateProg() {
+// v52: bei aufgeklappter Meldungsliste bleibt der bisherige Zustand (Spalten + Ueberschrift) erhalten; vorher verschwand die Ueberschrift bei jedem Datenabruf
+const pgOpen = alarmBox.classList.contains('open');
+const pgPrev = pgOpen ? [pgL.style.display, pgR.style.display, pgT.style.display] : null;
 pgHide();
 if (!pgData || !pgTs || Date.now() - pgTs > PG_MAX_ALTER_MS) return;
 const now = Date.now();
@@ -1160,6 +1163,7 @@ pgL.innerHTML = pgColumn(items.slice(0, 4), true);
 pgL.style.display = 'block';
 if (items.length > 4) { pgR.innerHTML = pgColumn(items.slice(4), false); pgR.style.display = 'block'; }
 layoutProg();
+if (pgPrev) { pgL.style.display = pgPrev[0]; if (items.length > 4) pgR.style.display = pgPrev[1]; pgT.style.display = pgPrev[2]; }
 }
 // Platzsuche: Zuerst unter der Auslastungszeile (oben), reicht dort der Platz neben dem Ring nicht, unten in den
 // Ecken neben dem unteren Ringrand. Beruehrt die Spalte den Ring (Abstand unter 8 px), werden die Zeilen in
